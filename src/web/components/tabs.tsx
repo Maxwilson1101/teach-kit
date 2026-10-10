@@ -1,84 +1,60 @@
-import { type KeyboardEvent, type ReactNode, useId, useState } from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { type ReactNode, useState } from "react";
 
 export interface TabItem {
-  /** Stable identity within the tab group, used as the React key. */
+  /** Stable identity within the tab group, used as the React key and tab value. */
   id: string;
   title: string;
   content: ReactNode;
 }
 
 /**
- * Alternative perspectives or implementations shown one at a time.
- *
- * The first tab is initially selected. Left/Right move focus and selection
- * with wraparound; Home/End select the first/last tab. Only the selected tab
- * is in the tab order, and each tab references its mounted panel; inactive
- * panels are hidden. An empty group renders nothing. Markdown validation,
- * not this component, rejects nested tab groups.
+ * Alternative perspectives shown one at a time using Radix's accessible tabs.
+ * Left/Right wrap focus and selection; Home/End select the first/last tab.
+ * The first tab is initially selected, and Tab moves into its focusable panel.
+ * Inactive panels remain mounted but hidden to preserve nested component state.
+ * An empty group renders nothing. Markdown validation rejects nested groups.
  */
 export function Tabs({ tabs }: { tabs: TabItem[] }) {
-  const [active, setActive] = useState(0);
-  const id = useId();
-
+  const [active, setActive] = useState(tabs[0]?.id ?? "");
   if (tabs.length === 0) return null;
 
-  const last = tabs.length - 1;
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    let next: number | undefined;
-    if (event.key === "ArrowRight") next = active === last ? 0 : active + 1;
-    else if (event.key === "ArrowLeft") next = active === 0 ? last : active - 1;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = last;
-    if (next === undefined) return;
-
-    event.preventDefault();
-    setActive(next);
-    const buttons =
-      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-    buttons?.[next]?.focus();
-  };
-
   return (
-    <div className="my-6" data-tabs>
-      <div
-        role="tablist"
-        aria-orientation="horizontal"
-        className="flex flex-wrap gap-1 border-b border-slate-200"
-        onKeyDown={handleKeyDown}
-      >
-        {tabs.map((tab, index) => (
-          <button
+    <TabsPrimitive.Root
+      value={active}
+      onValueChange={setActive}
+      activationMode="automatic"
+      orientation="horizontal"
+      className="my-6"
+      data-tabs
+    >
+      <TabsPrimitive.List loop className="flex flex-wrap gap-1 border-b border-slate-200">
+        {tabs.map((tab) => (
+          <TabsPrimitive.Trigger
             key={tab.id}
-            type="button"
-            role="tab"
-            id={`${id}-tab-${index}`}
-            aria-selected={index === active}
-            aria-controls={`${id}-panel-${index}`}
-            tabIndex={index === active ? 0 : -1}
-            onClick={() => setActive(index)}
+            value={tab.id}
             className={
-              index === active
+              tab.id === active
                 ? "rounded-t-md border border-b-0 border-slate-200 bg-white px-4 py-2 font-medium text-slate-900"
                 : "rounded-t-md px-4 py-2 text-slate-600 hover:text-slate-900"
             }
           >
             {tab.title}
-          </button>
+          </TabsPrimitive.Trigger>
         ))}
-      </div>
-      {tabs.map((tab, index) => (
-        <div
+      </TabsPrimitive.List>
+      {tabs.map((tab) => (
+        <TabsPrimitive.Content
           key={tab.id}
-          role="tabpanel"
-          id={`${id}-panel-${index}`}
-          aria-labelledby={`${id}-tab-${index}`}
-          hidden={index !== active}
+          value={tab.id}
+          forceMount
+          hidden={tab.id !== active}
+          tabIndex={tab.id === active ? 0 : -1}
           className="space-y-3 pt-4 text-slate-700 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
         >
           {tab.content}
-        </div>
+        </TabsPrimitive.Content>
       ))}
-    </div>
+    </TabsPrimitive.Root>
   );
 }

@@ -69,6 +69,22 @@ const source = [
   ":::",
   "",
   "::::",
+  "",
+  "::::tabs",
+  "",
+  ':::tab{title="Example A"}',
+  "",
+  "First example.",
+  "",
+  ":::",
+  "",
+  ':::tab{title="Example B"}',
+  "",
+  "Second example.",
+  "",
+  ":::",
+  "",
+  "::::",
 ].join("\n");
 
 const document = parseMarkdown("fixture.md", source);

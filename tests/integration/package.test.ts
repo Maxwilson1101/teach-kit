@@ -61,6 +61,7 @@ import { toHast } from "mdast-util-to-hast";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import * as Tabs from "@radix-ui/react-tabs";
 
 const course = await loadCourse("course/index.ts");
 assert.deepEqual(course.lessons.map((lesson) => lesson.status), ["generated", "planned"]);
@@ -73,6 +74,16 @@ const tree = { type: "root", children: [
 ] };
 assert.equal(renderToStaticMarkup(toJsxRuntime(toHast(tree), { Fragment, jsx, jsxs })),
   "<p>Packaged runtime.</p>");
+const tabs = renderToStaticMarkup(jsxs(Tabs.Root, {
+  defaultValue: "one",
+  children: [
+    jsx(Tabs.List, { children: jsx(Tabs.Trigger, { value: "one", children: "First" }) }),
+    jsx(Tabs.Content, { value: "one", children: "Installed panel." }),
+  ],
+}));
+assert.match(tabs, /role="tab"/);
+assert.match(tabs, /role="tabpanel"/);
+assert.match(tabs, /Installed panel/);
 `,
     );
     await run(["run", "check.ts"], directory);

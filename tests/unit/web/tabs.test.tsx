@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseMarkdown } from "../../../src/markdown/parse";
+import { Tabs } from "../../../src/web/components/tabs";
 import { Markdown } from "../../../src/web/markdown";
 
 function render(source: string): string {
@@ -44,6 +45,11 @@ describe("Tabs", () => {
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain('aria-selected="false"');
     expect(html.match(/hidden=""/g)?.length).toBe(1);
+    expect(html).toContain("Security modules verify them.");
+    const panels = html.match(/<div[^>]*role="tabpanel"[^>]*>/g) ?? [];
+    expect(panels).toHaveLength(2);
+    expect(panels[0]).toContain('tabindex="0"');
+    expect(panels[1]).toContain('tabindex="-1"');
   });
 
   test("links each tab to its panel for assistive technology", () => {
@@ -51,6 +57,23 @@ describe("Tabs", () => {
 
     expect(html).toContain('aria-controls="');
     expect(html).toContain('aria-labelledby="');
+  });
+
+  test("renders nothing for an empty component group", () => {
+    expect(renderToStaticMarkup(<Tabs tabs={[]} />)).toBe("");
+  });
+
+  test("renders one selected tab with a focusable panel", () => {
+    const html = renderToStaticMarkup(
+      <Tabs tabs={[{ id: "only", title: "Only", content: "Single panel." }]} />,
+    );
+
+    expect(html.match(/role="tab"/g)).toHaveLength(1);
+    expect(html.match(/role="tabpanel"/g)).toHaveLength(1);
+    expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).not.toContain("hidden");
+    expect(html).toContain("Single panel.");
   });
 
   test("does not render tabs without tab children", () => {
