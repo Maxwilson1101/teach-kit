@@ -29,10 +29,12 @@ describe("parseLcov", () => {
 
 describe("evaluateCoreCoverage", () => {
   test("reports coverage for the requested modules only", () => {
-    expect(evaluateCoreCoverage(report, ["src/course/config.ts", "src/course/content.ts"])).toEqual([
-      { module: "src/course/config.ts", lineCoverage: 1 },
-      { module: "src/course/content.ts", lineCoverage: 0.8 },
-    ]);
+    expect(evaluateCoreCoverage(report, ["src/course/config.ts", "src/course/content.ts"])).toEqual(
+      [
+        { module: "src/course/config.ts", lineCoverage: 1 },
+        { module: "src/course/content.ts", lineCoverage: 0.8 },
+      ],
+    );
   });
 
   test("counts a module missing from the report as zero coverage", () => {

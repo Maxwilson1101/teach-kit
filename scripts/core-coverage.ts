@@ -29,7 +29,10 @@ export function parseLcov(report: string): Map<string, ModuleCoverage> {
 
   const flush = () => {
     if (file === undefined) return;
-    coverage.set(file, { module: file, lineCoverage: linesFound === 0 ? 1 : linesHit / linesFound });
+    coverage.set(file, {
+      module: file,
+      lineCoverage: linesFound === 0 ? 1 : linesHit / linesFound,
+    });
     file = undefined;
     linesFound = 0;
     linesHit = 0;
@@ -58,8 +61,8 @@ export function evaluateCoreCoverage(
   const coverage = parseLcov(report);
   const records = [...coverage.values()];
 
-  return modules.map(module => {
-    const match = records.find(record => {
+  return modules.map((module) => {
+    const match = records.find((record) => {
       if (record.module === module) return true;
       const normalized = record.module.replaceAll("\\", "/");
       return normalized.endsWith(`/${module}`);
@@ -70,7 +73,14 @@ export function evaluateCoreCoverage(
 
 if (import.meta.main) {
   const tests = Bun.spawn(
-    ["bun", "test", "./tests/unit", "./tests/integration", "--coverage", "--coverage-reporter=lcov"],
+    [
+      "bun",
+      "test",
+      "./tests/unit",
+      "./tests/integration",
+      "--coverage",
+      "--coverage-reporter=lcov",
+    ],
     { stdio: ["inherit", "inherit", "inherit"] },
   );
   const exitCode = await tests.exited;

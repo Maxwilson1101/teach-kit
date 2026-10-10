@@ -167,6 +167,7 @@ bun run dev
 Available verification commands:
 
 ```bash
+bun run lint
 bun run typecheck
 bun run test
 bun run coverage:core
@@ -174,6 +175,8 @@ bun x playwright install chromium
 bun run test:e2e
 bun run build
 ```
+
+`bun run lint` checks formatting, import organization, and recommended Biome lint rules without modifying files. Warnings fail the gate. `bun run lint:fix` applies safe automatic fixes; review the diff afterward. Biome uses two-space indentation, a 100-column target width, and inline `type` specifiers. Dependencies and generated output are excluded; source and tests are checked.
 
 `bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration or content loading drops below 90% line coverage.
 

@@ -1,11 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { CourseConfigError, defineCourse, type CourseConfig } from "../../../src/course/config";
+import { type CourseConfig, CourseConfigError, defineCourse } from "../../../src/course/config";
 
 const validConfig: CourseConfig = {
   title: "Message Passing",
   description: "Understand transport and verification.",
   lessons: [
-    { id: "message-lifecycle", title: "Message Lifecycle", description: "Transport versus verification." },
+    {
+      id: "message-lifecycle",
+      title: "Message Lifecycle",
+      description: "Transport versus verification.",
+    },
     { id: "mailbox", title: "Mailbox", description: "Dispatch and processing." },
   ],
 };
@@ -24,7 +28,7 @@ describe("defineCourse", () => {
   test("returns the validated course and preserves lesson order", () => {
     const course = defineCourse(validConfig);
     expect(course.title).toBe("Message Passing");
-    expect(course.lessons.map(lesson => lesson.id)).toEqual(["message-lifecycle", "mailbox"]);
+    expect(course.lessons.map((lesson) => lesson.id)).toEqual(["message-lifecycle", "mailbox"]);
   });
 
   test("accepts a course with no planned lessons", () => {
@@ -35,24 +39,35 @@ describe("defineCourse", () => {
 describe("course configuration validation", () => {
   test("rejects a config that is not an object", () => {
     const error = captureError(() => defineCourse(null as unknown as CourseConfig));
-    expect(error.issues.map(issue => issue.path)).toEqual(["course"]);
+    expect(error.issues.map((issue) => issue.path)).toEqual(["course"]);
   });
 
   test("rejects a missing or empty title and description", () => {
-    const error = captureError(() => defineCourse({ ...validConfig, title: "  ", description: "" }));
-    expect(error.issues.map(issue => issue.path)).toEqual(["title", "description"]);
+    const error = captureError(() =>
+      defineCourse({ ...validConfig, title: "  ", description: "" }),
+    );
+    expect(error.issues.map((issue) => issue.path)).toEqual(["title", "description"]);
   });
 
   test("rejects a lessons field that is not an array", () => {
-    const error = captureError(() => defineCourse({ ...validConfig, lessons: "nope" } as unknown as CourseConfig));
-    expect(error.issues.map(issue => issue.path)).toEqual(["lessons"]);
+    const error = captureError(() =>
+      defineCourse({ ...validConfig, lessons: "nope" } as unknown as CourseConfig),
+    );
+    expect(error.issues.map((issue) => issue.path)).toEqual(["lessons"]);
   });
 
   test("rejects lessons that are not objects with required fields", () => {
     const error = captureError(() =>
-      defineCourse({ ...validConfig, lessons: [null, { id: "valid-id" }] } as unknown as CourseConfig),
+      defineCourse({
+        ...validConfig,
+        lessons: [null, { id: "valid-id" }],
+      } as unknown as CourseConfig),
     );
-    expect(error.issues.map(issue => issue.path)).toEqual(["lessons[0]", "lessons[1].title", "lessons[1].description"]);
+    expect(error.issues.map((issue) => issue.path)).toEqual([
+      "lessons[0]",
+      "lessons[1].title",
+      "lessons[1].description",
+    ]);
   });
 
   test("rejects every slot in an entirely sparse lessons array", () => {
@@ -70,8 +85,12 @@ describe("course configuration validation", () => {
     lessons[2] = { id: "same-id", title: "Second", description: "Second body." };
     lessons[4] = { id: "last", title: "", description: "Last body." };
     const error = captureError(() => defineCourse({ ...validConfig, title: "", lessons }));
-    expect(error.issues.map(issue => issue.path)).toEqual([
-      "title", "lessons[1]", "lessons[2].id", "lessons[3]", "lessons[4].title",
+    expect(error.issues.map((issue) => issue.path)).toEqual([
+      "title",
+      "lessons[1]",
+      "lessons[2].id",
+      "lessons[3]",
+      "lessons[4].title",
     ]);
   });
 
@@ -86,16 +105,30 @@ describe("course configuration validation", () => {
     const error = captureError(() =>
       defineCourse({ ...validConfig, lessons: [{ id: "valid-id", title: "", description: "  " }] }),
     );
-    expect(error.issues.map(issue => issue.path)).toEqual(["lessons[0].title", "lessons[0].description"]);
+    expect(error.issues.map((issue) => issue.path)).toEqual([
+      "lessons[0].title",
+      "lessons[0].description",
+    ]);
   });
 
   test("rejects unsafe lesson ids", () => {
-    const unsafeIds = ["../escape", "Message Lifecycle", "UPPER", "trailing-", "-leading", "double--dash", ""];
+    const unsafeIds = [
+      "../escape",
+      "Message Lifecycle",
+      "UPPER",
+      "trailing-",
+      "-leading",
+      "double--dash",
+      "",
+    ];
     for (const id of unsafeIds) {
       const error = captureError(() =>
-        defineCourse({ ...validConfig, lessons: [{ id, title: "Title", description: "Description" }] }),
+        defineCourse({
+          ...validConfig,
+          lessons: [{ id, title: "Title", description: "Description" }],
+        }),
       );
-      expect(error.issues.map(issue => issue.path)).toEqual(["lessons[0].id"]);
+      expect(error.issues.map((issue) => issue.path)).toEqual(["lessons[0].id"]);
     }
   });
 
@@ -109,7 +142,7 @@ describe("course configuration validation", () => {
         ],
       }),
     );
-    expect(error.issues.map(issue => issue.path)).toEqual(["lessons[1].id"]);
+    expect(error.issues.map((issue) => issue.path)).toEqual(["lessons[1].id"]);
   });
 
   test("collects all issues into an aggregated error", () => {

@@ -6,10 +6,10 @@
  */
 
 import { type Dirent } from "node:fs";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { CourseConfigError, defineCourse, type CourseConfig, type LessonConfig } from "./config";
+import { type CourseConfig, CourseConfigError, defineCourse, type LessonConfig } from "./config";
 
 export class CourseLoadError extends Error {
   /** Location of the problem, for example the course entry path. */
@@ -23,7 +23,7 @@ export class CourseLoadError extends Error {
 }
 
 function containsTraversal(relativePath: string): boolean {
-  return relativePath.split(/[\\/]/).some(segment => segment === "..");
+  return relativePath.split(/[\\/]/).some((segment) => segment === "..");
 }
 
 /**
@@ -88,9 +88,7 @@ export interface LoadedCourse {
 
 function isMissingFile(error: unknown): boolean {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as { code?: unknown }).code === "ENOENT"
+    typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT"
   );
 }
 
@@ -99,7 +97,10 @@ function isMissingFile(error: unknown): boolean {
  * Nested directories and non-markdown files are ignored; every planned lesson
  * maps to exactly one top-level file.
  */
-async function findUnplannedLessons(directory: string, plannedIds: ReadonlySet<string>): Promise<ContentDiagnostic[]> {
+async function findUnplannedLessons(
+  directory: string,
+  plannedIds: ReadonlySet<string>,
+): Promise<ContentDiagnostic[]> {
   const lessonsDirectory = join(directory, "lessons");
   let entries: Dirent[];
   try {
@@ -111,14 +112,16 @@ async function findUnplannedLessons(directory: string, plannedIds: ReadonlySet<s
   }
 
   return entries
-    .filter(entry => entry.isFile() && entry.name.endsWith(".md"))
-    .map(entry => ({ entry, id: entry.name.slice(0, -3) }))
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+    .map((entry) => ({ entry, id: entry.name.slice(0, -3) }))
     .filter(({ id }) => !plannedIds.has(id))
-    .map(({ entry }): ContentDiagnostic => ({
-      severity: "warning",
-      path: join(lessonsDirectory, entry.name),
-      message: `Markdown file is not part of the course plan: ${entry.name}.`,
-    }))
+    .map(
+      ({ entry }): ContentDiagnostic => ({
+        severity: "warning",
+        path: join(lessonsDirectory, entry.name),
+        message: `Markdown file is not part of the course plan: ${entry.name}.`,
+      }),
+    )
     .sort((left, right) => left.path.localeCompare(right.path));
 }
 
@@ -174,8 +177,11 @@ export async function loadCourse(entryPath = "index.ts"): Promise<LoadedCourse> 
   const entry = resolve(entryPath);
   const directory = dirname(entry);
   const config = defineCourse((await importEntry(entry)) as CourseConfig);
-  const lessons = await Promise.all(config.lessons.map(lesson => loadLesson(directory, lesson)));
-  const diagnostics = await findUnplannedLessons(directory, new Set(config.lessons.map(lesson => lesson.id)));
+  const lessons = await Promise.all(config.lessons.map((lesson) => loadLesson(directory, lesson)));
+  const diagnostics = await findUnplannedLessons(
+    directory,
+    new Set(config.lessons.map((lesson) => lesson.id)),
+  );
 
   return {
     title: config.title,

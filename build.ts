@@ -1,5 +1,5 @@
-import tailwind from "bun-plugin-tailwind";
 import { rm } from "node:fs/promises";
+import tailwind from "bun-plugin-tailwind";
 
 await rm(new URL("./dist", import.meta.url), { recursive: true, force: true });
 
@@ -31,6 +31,6 @@ const declarations = Bun.spawn(["bun", "x", "--no-install", "tsc", "-p", "tsconf
   stdout: "inherit",
   stderr: "inherit",
 });
-if (await declarations.exited !== 0) throw new Error("Declaration build failed.");
+if ((await declarations.exited) !== 0) throw new Error("Declaration build failed.");
 
 console.log("Built the public entry, declarations, and frontend scaffold.");

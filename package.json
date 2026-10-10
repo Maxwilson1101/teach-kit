@@ -10,11 +10,16 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "bun --hot src/server/dev.ts",
     "start": "NODE_ENV=production bun src/server/dev.ts",
     "build": "bun run build.ts",
+    "lint": "biome check . --error-on-warnings",
+    "lint:fix": "biome check . --write",
     "typecheck": "tsc --noEmit",
     "test": "bun test ./tests/unit ./tests/integration",
     "test:coverage": "bun test ./tests/unit ./tests/integration --coverage",
@@ -27,6 +32,7 @@
     "react-dom": "^19"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.64.0",
     "@types/bun": "latest",
     "@types/react": "^19",

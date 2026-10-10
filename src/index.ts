@@ -3,17 +3,17 @@
  * Importing this module must not start the preview server.
  */
 export {
+  type CourseConfig,
   CourseConfigError,
   defineCourse,
-  type CourseConfig,
   type LessonConfig,
   type ValidationIssue,
 } from "./course/config";
 export {
-  CourseLoadError,
-  loadCourse,
   type ContentDiagnostic,
+  CourseLoadError,
+  type LessonStatus,
   type LoadedCourse,
   type LoadedLesson,
-  type LessonStatus,
+  loadCourse,
 } from "./course/content";

@@ -4,7 +4,9 @@ import { CourseLoadError, resolveLessonFile } from "../../../src/course/content"
 
 describe("resolveLessonFile", () => {
   test("resolves a lesson file inside the course lessons directory", () => {
-    expect(resolveLessonFile("/course", "message-lifecycle")).toBe("/course/lessons/message-lifecycle.md");
+    expect(resolveLessonFile("/course", "message-lifecycle")).toBe(
+      "/course/lessons/message-lifecycle.md",
+    );
   });
 
   test("resolves relative course directories against the working directory", () => {

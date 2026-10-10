@@ -43,7 +43,7 @@ export class CourseConfigError extends Error {
   readonly issues: readonly ValidationIssue[];
 
   constructor(issues: readonly ValidationIssue[]) {
-    const details = issues.map(issue => `- ${issue.path}: ${issue.message}`).join("\n");
+    const details = issues.map((issue) => `- ${issue.path}: ${issue.message}`).join("\n");
     super(`Invalid course configuration:\n${details}`);
     this.name = "CourseConfigError";
     this.issues = issues;
@@ -104,7 +104,9 @@ export function defineCourse(config: CourseConfig): CourseConfig {
   const input: unknown = config;
 
   if (!isRecord(input)) {
-    throw new CourseConfigError([{ path: "course", message: "Expected a course configuration object." }]);
+    throw new CourseConfigError([
+      { path: "course", message: "Expected a course configuration object." },
+    ]);
   }
 
   validateText(issues, "title", input.title);

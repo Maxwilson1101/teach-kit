@@ -7,7 +7,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { CourseConfig } from "../../src/course/config";
+import { type CourseConfig } from "../../src/course/config";
 
 /** File URL of the package entry, used to build generated course entries. */
 export const packageEntryUrl = pathToFileURL(resolve(import.meta.dir, "../../src/index.ts")).href;
