@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { validateDirectives } from "../../../src/markdown/directives";
 import { parseMarkdown } from "../../../src/markdown/parse";
 import { Markdown } from "../../../src/web/markdown";
 
@@ -9,6 +10,25 @@ function render(source: string): string {
 }
 
 describe("Callout", () => {
+  test.each(["note", "tip", "warning"])(
+    "renders the validated %s kind with its default label",
+    (kind) => {
+      const document = parseMarkdown("callout.md", `:::callout{kind="${kind}"}\n\nBody.\n\n:::`);
+      expect(validateDirectives(document.tree, document.path)).toEqual([]);
+      const html = renderToStaticMarkup(<Markdown tree={document.tree} />);
+      expect(html).toContain(`data-callout="${kind}"`);
+      expect(html).toContain(`${kind[0]?.toUpperCase()}${kind.slice(1)}`);
+    },
+  );
+
+  test.each(["danger", "constructor", "toString", ""])(
+    "rejects and does not render unsupported kind %s",
+    (kind) => {
+      const document = parseMarkdown("callout.md", `:::callout{kind="${kind}"}\n\nBody.\n\n:::`);
+      expect(validateDirectives(document.tree, document.path)).toHaveLength(1);
+      expect(renderToStaticMarkup(<Markdown tree={document.tree} />)).toBe("");
+    },
+  );
   test("renders its kind, explicit title, and body", () => {
     const html = render(
       ':::callout{kind="warning" title="Keep these separate"}\n\nBody text.\n\n:::',

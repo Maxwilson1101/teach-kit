@@ -9,9 +9,8 @@
 
 import { type Parent, type Root, type RootContent } from "mdast";
 import { type ContainerDirective } from "mdast-util-directive";
+import { CALLOUT_KINDS } from "./callout-kind";
 import { type MarkdownDiagnostic, toDiagnostic } from "./diagnostics";
-
-const CALLOUT_KINDS = ["note", "tip", "warning"] as const;
 
 interface AttributeRule {
   /** The attribute must be present. */
