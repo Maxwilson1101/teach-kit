@@ -99,6 +99,29 @@ describe("loadCourse", () => {
 
     expect(error).toBeInstanceOf(CourseLoadError);
     expect((error as CourseLoadError).path).toBe(join(course.directory, "missing.ts"));
+    expect(error.message).toContain("Course entry file does not exist.");
+  });
+
+  test("preserves filesystem errors when an entry parent is not a directory", async () => {
+    const course = await makeCourse({ config, extraFiles: { blocked: "Not a directory." } });
+    const entry = join(course.directory, "blocked", "index.ts");
+
+    const error = await captureError(() => loadCourse(entry));
+
+    expect(error).toBeInstanceOf(CourseLoadError);
+    expect((error as CourseLoadError).path).toBe(entry);
+    expect(error.message).toContain("Failed to inspect the course entry:");
+    expect(error.message).toContain("ENOTDIR");
+    expect(error.message).not.toContain("does not exist");
+  });
+
+  test("reports an existing entry directory as not a regular file", async () => {
+    const course = await makeCourse({ config });
+
+    const error = await captureError(() => loadCourse(course.directory));
+
+    expect(error).toBeInstanceOf(CourseLoadError);
+    expect(error.message).toContain("Course entry is not a regular file.");
   });
 
   test("reports an entry without a default export", async () => {

@@ -124,10 +124,24 @@ export async function validateResources(
       continue;
     }
 
-    const details = await stat(result.file).catch(() => undefined);
-    if (!details?.isFile()) {
-      const shown = relative(options.courseDirectory, result.file) || url;
-      diagnostics.push(toDiagnostic(options.path, node, `Image file does not exist: ${shown}.`));
+    const shown = relative(options.courseDirectory, result.file) || url;
+    try {
+      const details = await stat(result.file);
+      if (!details.isFile()) {
+        diagnostics.push(
+          toDiagnostic(options.path, node, `Image path is not a regular file: ${shown}.`),
+        );
+      }
+    } catch (error) {
+      const missing =
+        typeof error === "object" &&
+        error !== null &&
+        (error as { code?: unknown }).code === "ENOENT";
+      const reason = error instanceof Error ? error.message : String(error);
+      const message = missing
+        ? `Image file does not exist: ${shown}.`
+        : `Failed to inspect image file ${shown}: ${reason}`;
+      diagnostics.push(toDiagnostic(options.path, node, message));
     }
   }
 

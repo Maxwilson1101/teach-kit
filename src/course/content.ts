@@ -126,8 +126,12 @@ async function findUnplannedLessons(
 }
 
 async function importEntry(entry: string): Promise<unknown> {
-  const stats = await stat(entry).catch(() => undefined);
-  if (!stats?.isFile()) throw new CourseLoadError(entry, "Course entry file does not exist.");
+  const stats = await stat(entry).catch((error: unknown) => {
+    if (isMissingFile(error)) throw new CourseLoadError(entry, "Course entry file does not exist.");
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CourseLoadError(entry, `Failed to inspect the course entry: ${message}`);
+  });
+  if (!stats.isFile()) throw new CourseLoadError(entry, "Course entry is not a regular file.");
 
   let imported: { default?: unknown };
   try {
