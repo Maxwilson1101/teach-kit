@@ -100,7 +100,7 @@ Planned directives:
 
 Tabs use `@radix-ui/react-tabs` for keyboard focus, automatic activation, and ARIA relationships while retaining package-owned styling. Inactive panels stay mounted and hidden, so switching tabs preserves nested disclosure state. The selected panel is keyboard-focusable. Markdown validation, rather than the UI primitive, enforces the prohibition on nested tab groups.
 
-Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches.
+Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches. Footnote references and definitions are also rejected with located errors; move their explanations into the lesson body instead.
 
 Root-level headings (`##`) define primary lesson sections and navigation entries. Headings inside block quotes do not enter navigation; the same exclusion is planned for teaching components. Section anchors are non-empty and unique among sections, with `section` as the fallback for empty or punctuation-only titles. Anchors are deterministic for the same heading order; reordering duplicate headings can change their suffixes.
 

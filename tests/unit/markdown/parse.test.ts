@@ -75,6 +75,56 @@ describe("parseMarkdown", () => {
     ]);
   });
 
+  test("reports footnote references and definitions as located errors", () => {
+    const document = parseMarkdown(
+      "lessons/footnotes.md",
+      "Claim[^evidence].\n\n[^evidence]: Essential qualification.",
+    );
+
+    expect(document.diagnostics).toEqual([
+      {
+        severity: "error",
+        path: document.path,
+        line: 1,
+        column: 6,
+        message: "Footnotes are not supported. Move the explanation into the lesson body.",
+      },
+      {
+        severity: "error",
+        path: document.path,
+        line: 3,
+        column: 1,
+        message: "Footnotes are not supported. Move the explanation into the lesson body.",
+      },
+    ]);
+    expect(types(document.tree)).toContain("footnoteReference");
+    expect(types(document.tree)).toContain("footnoteDefinition");
+  });
+
+  test("reports unused footnote definitions and references inside directives", () => {
+    const document = parseMarkdown(
+      "lessons/nested-footnotes.md",
+      ':::details{title="More"}\n\nText[^note].\n\n:::\n\n[^note]: Explanation.\n\n[^unused]: Unused.',
+    );
+
+    expect(document.diagnostics.map(({ line, column }) => ({ line, column }))).toEqual([
+      { line: 3, column: 5 },
+      { line: 7, column: 1 },
+      { line: 9, column: 1 },
+    ]);
+    expect(document.diagnostics.every((diagnostic) => diagnostic.severity === "error")).toBe(true);
+  });
+
+  test("allows literal footnote syntax in code and unresolved references in prose", () => {
+    const document = parseMarkdown(
+      "lessons/literal.md",
+      "`[^note]`\n\n```md\n[^note]: Example syntax.\n```\n\nUnresolved[^missing].",
+    );
+
+    expect(document.diagnostics).toEqual([]);
+    expect(types(document.tree)).not.toContain("footnoteReference");
+  });
+
   test("parses container directives with their names and attributes", () => {
     const source = [
       ':::callout{kind="warning" title="Keep these separate"}',

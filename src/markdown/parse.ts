@@ -2,8 +2,8 @@
  * Shared Markdown AST pipeline.
  *
  * The mdast tree and pipeline models stay internal to the package.
- * Raw HTML is not an authoring escape hatch and is reported as a located
- * error diagnostic. Callers must reject documents with errors before rendering.
+ * Raw HTML and footnotes are unsupported and produce located error diagnostics.
+ * Callers must reject documents with errors before rendering.
  */
 
 import { type Root } from "mdast";
@@ -26,8 +26,8 @@ export interface MarkdownDocument {
 /**
  * Parses Markdown into an AST, enabling GitHub-flavored tables and container
  * directives. Directive fences use three or more colons; nesting an outer
- * container requires a longer fence than its inner containers. Raw HTML
- * produces an error diagnostic; every other structure is preserved so
+ * container requires a longer fence than its inner containers. Raw HTML and
+ * footnotes produce error diagnostics; every structure is preserved so
  * rendering, validation, and navigation share one parse result.
  * Does not validate directive rules or resource references.
  *
@@ -38,8 +38,18 @@ export function parseMarkdown(path: string, source: string): MarkdownDocument {
   const tree = unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(source) as Root;
   const diagnostics: MarkdownDiagnostic[] = [];
 
-  visit(tree, "html", (node) => {
-    diagnostics.push(toDiagnostic(path, node, "Raw HTML is not supported."));
+  visit(tree, (node) => {
+    if (node.type === "html") {
+      diagnostics.push(toDiagnostic(path, node, "Raw HTML is not supported."));
+    } else if (node.type === "footnoteReference" || node.type === "footnoteDefinition") {
+      diagnostics.push(
+        toDiagnostic(
+          path,
+          node,
+          "Footnotes are not supported. Move the explanation into the lesson body.",
+        ),
+      );
+    }
   });
 
   return { path, tree, diagnostics };
