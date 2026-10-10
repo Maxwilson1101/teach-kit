@@ -1,10 +1,10 @@
 # Teach Kit
 
-Teach Kit is a planned Bun package for turning Markdown lessons into a local course preview. It is designed for teaching agents: plan a course in TypeScript, write lessons in Markdown, and verify the reading experience with Playwright.
+Teach Kit is a Bun package for turning Markdown lessons into a local course preview. It is designed for teaching agents: plan a course in TypeScript, write lessons in Markdown, and verify the reading experience with Playwright.
 
 ## Status
 
-This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API, course content loading, and a shared Markdown AST pipeline are implemented. The CLI, lesson rendering, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
+Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 
@@ -21,9 +21,9 @@ See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENT
 
 Offline HTML export, multi-course management, learning progress, executable notebooks, and arbitrary JSX or custom CSS authoring are outside the MVP.
 
-## Planned Consumer Experience
+## Consumer Experience
 
-The course configuration API and content loading described below are implemented. Lesson rendering and the commands describe the intended interface and are not yet available.
+The overview lists every configured lesson in order. Valid lesson bodies are available; missing bodies stay visibly planned without links. Lesson pages provide a course-overview link and the immediately previous and next items in the plan. Planned neighbors are shown as information, not skipped or linked.
 
 ### Project Layout
 
@@ -65,9 +65,9 @@ export default defineCourse({
 
 The configuration is the source of truth for lesson order, titles, and descriptions. Each lesson ID maps to `lessons/<id>.md`; paths resolve relative to the course entry rather than the current working directory.
 
-Course configuration imports follow Bun's module cache; restart the preview process after editing `index.ts`. Symbolic links are outside the supported course layout and are not explicitly rejected by the current loader. Generated status currently means the lesson source was read, not that Markdown validation has run.
+Course configuration imports follow Bun's module cache; restart the preview process after editing `index.ts`. Symbolic links are outside the supported course layout and are not explicitly rejected by the current loader. The low-level `loadCourse()` API reports generated status when a lesson source is read. The CLI and page server additionally validate every available lesson before exposing the course.
 
-A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. The shared pipeline in `src/markdown/` parses lesson sources into an AST, derives level-two sections with unique anchors and plain-text summaries, and validates links and local images. Raw HTML is reported as a located error rather than rendered. Links may use `http`, `https`, or `mailto` protocols, relative paths, or anchors; any other protocol is rejected. Images are local course assets only: remote, absolute, and escaping paths are errors, and a missing asset file is an error. The loader itself does not parse Markdown yet; the renderer and future `check` command consume the pipeline. The pipeline parses container directives and validates them against a fixed allowlist, and the React renderer turns callouts, details, tabs, and two-column layouts into components. Lesson pages that display them are not implemented yet; rendering and component interactions are tested in an isolated browser preview fixture. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
+A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. The shared pipeline in `src/markdown/` parses lesson sources into an AST, derives level-two sections with unique anchors and plain-text summaries, and validates links and local images. Raw HTML is reported as a located error rather than rendered. Links may use `http`, `https`, or `mailto` protocols, relative paths, or anchors; any other protocol is rejected. Images are local course assets only: remote, absolute, and escaping paths are errors, and a missing asset file is an error. The low-level loader does not parse Markdown; `check` and the page server consume the shared pipeline. The pipeline parses container directives and validates them against a fixed allowlist, and the React renderer turns callouts, details, tabs, and two-column layouts into components on real lesson pages. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
 
 ### Lesson Authoring
 
@@ -89,7 +89,7 @@ No. They are separate transactions on different chains.
 :::
 ```
 
-Planned directives:
+Supported directives:
 
 | Directive | Purpose | Constraints |
 | --- | --- | --- |
@@ -102,7 +102,7 @@ Tabs use `@radix-ui/react-tabs` for keyboard focus, automatic activation, and AR
 
 Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches. Footnote references and definitions are also rejected with located errors; move their explanations into the lesson body instead.
 
-Root-level headings (`##`) define primary lesson sections and navigation entries. Headings inside block quotes do not enter navigation; the same exclusion is planned for teaching components. Section anchors are non-empty and unique among sections, with `section` as the fallback for empty or punctuation-only titles. Anchors are deterministic for the same heading order; reordering duplicate headings can change their suffixes.
+Root-level headings (`##`) define primary lesson sections and navigation entries. Headings inside block quotes do not enter navigation; headings inside teaching components are excluded as well. Section anchors are non-empty and unique among sections, with `section` as the fallback for empty or punctuation-only titles. Anchors are deterministic for the same heading order; reordering duplicate headings can change their suffixes.
 
 Preview summaries use the first non-empty paragraph, including paragraphs in lists and block quotes. Subheadings, code, tables, raw HTML, and other non-prose containers do not supply summaries. Inline formatting preserves text boundaries, and image alternative text contributes to the summary. Sections without prose have an empty summary.
 
@@ -112,15 +112,21 @@ The internal Markdown modules separate parsing, section metadata, resource valid
 
 ### Installation and Commands
 
-Once packaging is implemented, local development will support installing the library from a local path:
+Build and pack this repository, then install the resulting artifact in an independent course project:
 
 ```bash
-bun add /absolute/path/to/teach-kit
+# In the Teach Kit repository
+bun install
+bun run build
+bun pm pack --filename teach-kit.tgz
+
+# In the course project
+bun add /absolute/path/to/teach-kit/teach-kit.tgz
 ```
 
-A published package will support `bun add teach-kit`, subject to package name availability. Consumers will not need to configure React or Tailwind.
+A published package may later support `bun add teach-kit`, subject to package name availability. Consumers do not need React or Tailwind configuration; the frontend is already built.
 
-The intended project scripts are:
+Use these project scripts:
 
 ```json
 {
@@ -131,17 +137,24 @@ The intended project scripts are:
 }
 ```
 
-`dev` will load the root course entry and serve the course index at `/` and lesson pages at `/lessons/<id>`. `check` will validate configuration, Markdown, and resource references without launching a browser.
+`teach-kit dev` loads the root `index.ts` and serves `/` and `/lessons/<id>` on loopback port 4321. `teach-kit check` validates configuration, Markdown, and resources without launching a browser. Both commands accept an optional entry path, resolved against the working directory:
 
-## Planned Repository Layout
+```bash
+bun run check
+bun run dev
+PORT=4325 bun run dev /absolute/path/to/course/index.ts
+```
+
+Invalid configuration or lesson content produces a nonzero exit code with actionable diagnostics. Missing lesson bodies are valid planned content. Unknown and planned lesson URLs return HTTP 404. `PORT` must be an integer between 0 and 65535; 0 requests an available port. SIGINT and SIGTERM shut down the preview cleanly. Edit Markdown or assets and refresh to see changes; restart after configuration changes. No hot-reload system is provided.
+
+## Repository Layout
 
 ```text
 src/
 ├── index.ts               # Public API and types
 ├── course/                # Typed configuration, validation, and content loading
 ├── markdown/              # Shared AST pipeline, directives, and section metadata
-├── cli/                   # dev and check commands
-├── server/                # Preview server, routes, and resource access
+├── server/                # CLI, preview routes, and resource access
 └── web/                   # Browser pages, components, and styles
 
 tests/
@@ -151,21 +164,23 @@ tests/
 ├── fixtures/              # Valid, invalid, and boundary content
 └── helpers/               # Temporary projects and server lifecycle
 
-examples/
-└── hyperlane/             # A course matching the consumer project layout
+example/                   # A course with two available and two planned lessons
+├── index.ts
+├── lessons/               # Prose and teaching components; no code or Mermaid
+└── assets/                # Local SVG illustration
 
 dist/                      # Generated package output; not committed
 ```
 
-This is the intended structure, not a list of directories already implemented. All test files live under `tests/`: unit tests in `tests/unit/`, integration tests in `tests/integration/`, and browser tests in `tests/e2e/`. Source and tooling directories do not contain test files.
+All test files live under `tests/`: unit tests in `tests/unit/`, integration tests in `tests/integration/`, and browser tests in `tests/e2e/`. Source and tooling directories do not contain test files.
 
-`src/index.ts` is the public package entry and does not start a server. The scaffold preview runs through `src/server/dev.ts`; browser code lives in `src/web/`. Remaining directories will be introduced as their features are implemented.
+`src/index.ts` is the public package entry and does not start a server. The repository preview runs through `src/server/dev.ts` using `example/index.ts` by default; the consumer CLI lives in `src/server/cli.ts`. Browser code lives in `src/web/`.
 
-Course content will be read at runtime, while the package frontend will be built in advance. Package installation tests will use an actual packed artifact in an independent project, not only a linked workspace.
+Course content is read at runtime, while the package frontend is built in advance. Package installation tests use an actual packed artifact in an independent project, including CLI validation and desktop/narrow-screen browser navigation.
 
 ## Development
 
-Install dependencies and run the scaffold preview:
+Install dependencies and preview the example (the command builds the package first):
 
 ```bash
 bun install
@@ -186,15 +201,21 @@ bun run build
 
 `bun run lint` checks formatting, import organization, and recommended Biome lint rules without modifying files. Warnings fail the gate. `bun run lint:fix` applies safe automatic fixes; review the diff afterward. Biome uses two-space indentation, a 100-column target width, and inline `type` specifiers. Dependencies and generated output are excluded; source and tests are checked.
 
-`bun run verify` runs lint, type checks, core coverage tests, and the build in order, stopping at the first failure. The GitHub Actions quality job runs the same command on pushes and pull requests. Browser and packed-package consumption tests remain separate checks. Repository branch protection must require the `quality` job to prevent merging failures.
+`bun run verify` runs lint, type checks, core coverage tests, and the build in order, stopping at the first failure. The GitHub Actions quality job runs the same command on pushes and pull requests. Unit and integration tests, including packed-package consumption with Chromium, run through the coverage command. The full Playwright suite is an additional required check. Install Chromium before running verification. Repository branch protection must require the `quality` job to prevent merging failures.
 
 Type checking also rejects unused locals and parameters, missing return paths, and explicit `undefined` assignments to optional properties that do not allow them. Isolated-module checking matches Bun's per-file transpilation, and consistent filename casing helps prevent cross-platform import failures.
 
 `bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration, content loading, or Markdown pipeline modules drop below 90% line coverage.
 
-`bun run build` generates the public JavaScript entry, type declarations, and frontend assets in `dist/`. It does not yet build a course CLI. `bun run start` runs the source preview server with development features disabled; it is not a packaged production server.
+`bun run build` generates the public JavaScript entry, CLI, type declarations, and frontend assets in `dist/`. `bun run start` runs the repository example using an existing build; it is not a separate production-deployment workflow.
 
-Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. A test-only preview on port 4323 exercises the Markdown renderer and teaching components independently of the unfinished lesson pages. Unit and integration tests also build, pack, and install the real artifact in a temporary consumer project, checking public types, content loading, frontend presence, and rendering dependencies; this does not yet cover packaged CLI or lesson-page workflows. Generated build output and test reports are ignored by Git.
+Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. The main preview on port 4322 exercises the real example; a test-only preview on port 4323 exercises the renderer and components independently. The packed-package integration test installs the artifact in a temporary consumer, validates public types, starts its installed CLI, opens the overview and a lesson in Chromium, and verifies Markdown refresh and process cleanup. Generated build output and test reports are ignored by Git.
+
+### Theme and Components
+
+`components.json` configures shadcn for React, Tailwind v4, CSS variables, and the `@/` source alias. Registry components live in `src/web/components/ui/`; pages compose Badge and Button without duplicating their primitives. Course items use subtle dividing rules, and lessons render as continuous articles rather than section cards. `src/web/lib/utils.ts` provides the standard `clsx` + `tailwind-merge` utility. Existing accessible tabs remain backed by Radix; disclosures use native HTML semantics.
+
+Theme colors and radii belong in `src/web/styles/globals.css`, using semantic tokens such as `background`, `card`, `primary`, and `muted-foreground`. The theme uses a white canvas, dark neutral text, restrained green accents, serif article text, and a centered reading column. Teaching-callout colors extend the semantic tokens. Only a light theme is provided: system dark-mode preferences do not change the page, and there is no theme switcher. Add only needed components with `bunx shadcn@latest add <component>`, inspect generated imports and dependencies, then run `bun run lint:fix` and verification. The Bun frontend build scans package source only; it does not scan a consuming course's Markdown or require a consumer Tailwind configuration.
 
 Development follows TDD:
 
