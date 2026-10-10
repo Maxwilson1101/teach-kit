@@ -75,6 +75,60 @@ describe("parseMarkdown", () => {
     ]);
   });
 
+  test("parses container directives with their names and attributes", () => {
+    const source = [
+      ':::callout{kind="warning" title="Keep these separate"}',
+      "",
+      "Dispatch success does not imply execution success.",
+      "",
+      ":::",
+    ].join("\n");
+
+    const document = parseMarkdown("lessons/directives.md", source);
+    const directives: { name: string; attributes: unknown }[] = [];
+    visit(document.tree, "containerDirective", (node) => {
+      directives.push({ name: node.name, attributes: node.attributes });
+    });
+
+    expect(directives).toEqual([
+      { name: "callout", attributes: { kind: "warning", title: "Keep these separate" } },
+    ]);
+    expect(document.diagnostics).toEqual([]);
+  });
+
+  test("nests directives with a longer colon fence on the outer container", () => {
+    const source = [
+      "::::columns",
+      "",
+      ":::column",
+      "",
+      "Left side.",
+      "",
+      ":::",
+      "",
+      ":::column",
+      "",
+      "Right side.",
+      "",
+      ":::",
+      "",
+      "::::",
+    ].join("\n");
+
+    const document = parseMarkdown("lessons/nested.md", source);
+    const outer = document.tree.children[0];
+
+    expect(outer?.type).toBe("containerDirective");
+    if (outer?.type !== "containerDirective") throw new Error("Expected an outer container.");
+    expect(outer.name).toBe("columns");
+    expect(
+      outer.children
+        .filter((child) => child.type === "containerDirective")
+        .map((child) => child.name),
+    ).toEqual(["column", "column"]);
+    expect(document.diagnostics).toEqual([]);
+  });
+
   test("does not mutate or share state between documents", () => {
     const first = parseMarkdown("a.md", "Text.");
     const second = parseMarkdown("b.md", "Other.");
