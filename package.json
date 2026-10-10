@@ -17,6 +17,7 @@
     "build": "bun run build.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test ./src ./tests/integration",
+    "test:coverage": "bun test ./src ./tests/integration --coverage",
     "test:e2e": "playwright test"
   },
   "dependencies": {
