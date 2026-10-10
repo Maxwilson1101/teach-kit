@@ -50,8 +50,7 @@ describe("extractSections", () => {
 
     const result = sections(source);
 
-    expect(result.map((section) => section.id)).toHaveLength(3);
-    expect(new Set(result.map((section) => section.id)).size).toBe(3);
+    expect(result.map((section) => section.id)).toEqual(["section", "section-1", "section-2"]);
   });
 
   test("summarizes from the first prose block and skips code and tables", () => {
@@ -78,6 +77,46 @@ describe("extractSections", () => {
     const source = ["## Code only", "", "```js", "value()", "```"].join("\n");
 
     expect(sections(source)).toEqual([{ id: "code-only", title: "Code only", summary: "" }]);
+  });
+
+  test("keeps fallback anchors unique alongside actual section titles", () => {
+    expect(sections("## !!!\n\n## Section\n\n##").map((section) => section.id)).toEqual([
+      "section",
+      "section-1",
+      "section-2",
+    ]);
+  });
+
+  test("preserves adjacent inline text and includes image alternative text", () => {
+    expect(
+      sections(
+        "## Summary\n\nSome **bold**text and [link](https://example.com). ![Diagram](assets/a.png)",
+      )[0]?.summary,
+    ).toBe("Some boldtext and link. Diagram");
+    expect(
+      sections("## Summary\n\n![Referenced diagram][pic]\n\n[pic]: assets/a.png")[0]?.summary,
+    ).toBe("Referenced diagram");
+  });
+
+  test("preserves hard-break word boundaries without modifying the shared tree", () => {
+    const document = parseMarkdown(
+      "lesson.md",
+      "## Summary\n\nFirst  \nsecond and *third  \nfourth*.",
+    );
+    const original = structuredClone(document.tree);
+    expect(extractSections(document.tree)[0]?.summary).toBe("First second and third fourth.");
+    expect(document.tree).toEqual(original);
+  });
+
+  test("skips subheadings and finds the first paragraph in prose containers", () => {
+    expect(sections("## Summary\n\n### Subheading\n\nActual prose.")[0]?.summary).toBe(
+      "Actual prose.",
+    );
+    expect(sections("## Summary\n\n> ### Quoted heading\n>\n> Quoted prose.")[0]?.summary).toBe(
+      "Quoted prose.",
+    );
+    expect(sections("## Summary\n\n- First item.\n- Second item.")[0]?.summary).toBe("First item.");
+    expect(sections("## Summary\n\n### Subheading")[0]?.summary).toBe("");
   });
 
   test("ignores content before the first level-two heading", () => {

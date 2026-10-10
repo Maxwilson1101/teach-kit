@@ -2,52 +2,65 @@
  * Section metadata derived from level-two headings.
  *
  * Only direct children of the document root act as section boundaries, so
- * headings nested inside containers (block quotes now, directives later) never
- * enter the section navigation. Each section carries a unique, stable anchor
- * and a plain-text summary taken from its first prose block.
+ * headings nested inside block quotes, lists, or directive containers never
+ * enter the section navigation. Anchors are unique and deterministic for the
+ * same heading order. Summaries use the first non-empty paragraph in ordinary
+ * prose, including lists and block quotes, but excluding other containers.
  */
 
-import GithubSlugger from "github-slugger";
-import { type Root, type RootContent } from "mdast";
+import GithubSlugger, { slug } from "github-slugger";
+import { type Paragraph, type Root, type RootContent } from "mdast";
 import { toString as mdastToString } from "mdast-util-to-string";
+import { EXIT, SKIP, visit } from "unist-util-visit";
 
 export interface MarkdownSection {
-  /** URL-safe anchor, unique within the lesson. */
+  /** Non-empty heading slug, unique among the lesson's section anchors. */
   id: string;
   title: string;
-  /** Plain text from the first prose block, or an empty string when absent. */
+  /** First non-empty paragraph in ordinary prose, including image alt text; empty when absent. */
   summary: string;
 }
 
-/** Node types excluded from summaries because they are not ordinary prose. */
-const NON_PROSE: ReadonlySet<RootContent["type"]> = new Set([
-  "code",
-  "table",
-  "html",
-  "thematicBreak",
-  "yaml",
-  "definition",
-  "footnoteDefinition",
+/** Only ordinary prose containers may contribute a summary paragraph. */
+const PROSE_CONTAINERS: ReadonlySet<RootContent["type"]> = new Set([
+  "blockquote",
+  "list",
+  "listItem",
 ]);
 
-function plainText(node: RootContent): string {
-  if (NON_PROSE.has(node.type)) return "";
-  if (node.type === "text" || node.type === "inlineCode") return node.value;
-  if (!("children" in node)) return "";
-  return node.children.map(plainText).join(" ");
+function summaryText(paragraph: Paragraph): string {
+  // The text utility omits hard breaks; map them to spaces on a disposable copy.
+  const copy = structuredClone(paragraph);
+  visit(copy, "break", (_node, index, parent) => {
+    if (parent && index !== undefined) parent.children[index] = { type: "text", value: " " };
+  });
+  return mdastToString(copy, { includeImageAlt: true, includeHtml: false })
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function summarize(nodes: readonly RootContent[]): string {
   for (const node of nodes) {
-    const text = plainText(node).replace(/\s+/g, " ").trim();
-    if (text !== "") return text;
+    let summary = "";
+    visit(node, (candidate) => {
+      if (candidate.type === "paragraph") {
+        summary = summaryText(candidate);
+        return summary ? EXIT : SKIP;
+      }
+      return PROSE_CONTAINERS.has(candidate.type) ? undefined : SKIP;
+    });
+    if (summary) return summary;
   }
   return "";
 }
 
 /**
- * Extracts level-two sections in document order.
- * Duplicate or empty titles receive unique anchors via the slugger.
+ * Extracts sections from top-level level-two headings in document order.
+ * Content before the first section is ignored. Each section extends to the
+ * next top-level level-two heading; deeper headings do not split sections.
+ * Empty or unsluggable titles use `section` as the anchor base, and duplicate
+ * anchors receive unique suffixes. Summaries follow the prose rules above.
+ * Does not mutate the tree or write anchor IDs onto heading nodes.
  */
 export function extractSections(tree: Root): MarkdownSection[] {
   const slugger = new GithubSlugger();
@@ -63,7 +76,7 @@ export function extractSections(tree: Root): MarkdownSection[] {
     if (node.type === "heading" && node.depth === 2) {
       flush();
       const title = mdastToString(node).trim();
-      current = { id: slugger.slug(title || "section"), title, nodes: [] };
+      current = { id: slugger.slug(slug(title) ? title : "section"), title, nodes: [] };
       continue;
     }
     if (current) current.nodes.push(node);

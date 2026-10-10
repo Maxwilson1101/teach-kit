@@ -100,7 +100,9 @@ Planned directives:
 
 Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches.
 
-Level-two headings (`##`) define primary lesson sections and navigation entries. Component-internal headings do not enter the section navigation. Preview summaries are derived from ordinary section text.
+Root-level headings (`##`) define primary lesson sections and navigation entries. Headings inside block quotes do not enter navigation; the same exclusion is planned for teaching components. Section anchors are non-empty and unique among sections, with `section` as the fallback for empty or punctuation-only titles. Anchors are deterministic for the same heading order; reordering duplicate headings can change their suffixes.
+
+Preview summaries use the first non-empty paragraph, including paragraphs in lists and block quotes. Subheadings, code, tables, raw HTML, and other non-prose containers do not supply summaries. Inline formatting preserves text boundaries, and image alternative text contributes to the summary. Sections without prose have an empty summary.
 
 The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Teach Kit owns the authoring policies and filesystem checks, while generic Markdown mechanics come from the unified ecosystem.
 
