@@ -20,6 +20,7 @@
     "build": "bun run build.ts",
     "lint": "biome check . --error-on-warnings",
     "lint:fix": "biome check . --write",
+    "verify": "bun run lint && bun run typecheck && bun run coverage:core && bun run build",
     "typecheck": "tsc --noEmit",
     "test": "bun test ./tests/unit ./tests/integration",
     "test:coverage": "bun test ./tests/unit ./tests/integration --coverage",

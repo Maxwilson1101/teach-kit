@@ -127,6 +127,8 @@ Complete this stage before every commit.
 - Run `bun run lint` before committing. Formatting, import organization, and
   lint warnings must all pass; do not disable rules to bypass the gate.
 - Use `bun run lint:fix` for safe automatic fixes and inspect the resulting diff.
+- `bun run verify` runs lint, type checks, core coverage tests, and the build.
+  It does not replace required browser or packed-package consumption tests.
 
 1. Run the tests for changed behavior and relevant dependent modules.
 2. Run type checks for code, public types, or configuration changes.

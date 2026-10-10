@@ -178,6 +178,8 @@ bun run build
 
 `bun run lint` checks formatting, import organization, and recommended Biome lint rules without modifying files. Warnings fail the gate. `bun run lint:fix` applies safe automatic fixes; review the diff afterward. Biome uses two-space indentation, a 100-column target width, and inline `type` specifiers. Dependencies and generated output are excluded; source and tests are checked.
 
+`bun run verify` runs lint, type checks, core coverage tests, and the build in order, stopping at the first failure. The GitHub Actions quality job runs the same command on pushes and pull requests. Browser and packed-package consumption tests remain separate checks. Repository branch protection must require the `quality` job to prevent merging failures.
+
 Type checking also rejects unused locals and parameters, missing return paths, and explicit `undefined` assignments to optional properties that do not allow them. Isolated-module checking matches Bun's per-file transpilation, and consistent filename casing helps prevent cross-platform import failures.
 
 `bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration or content loading drops below 90% line coverage.
