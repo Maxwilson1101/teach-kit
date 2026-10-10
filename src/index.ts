@@ -9,3 +9,11 @@ export {
   type LessonConfig,
   type ValidationIssue,
 } from "./course/config";
+export {
+  CourseLoadError,
+  loadCourse,
+  type ContentDiagnostic,
+  type LoadedCourse,
+  type LoadedLesson,
+  type LessonStatus,
+} from "./course/content";
