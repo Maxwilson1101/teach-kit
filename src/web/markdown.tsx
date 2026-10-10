@@ -81,7 +81,8 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
       jsxs,
       passNode: true,
       components: {
-        div: ({ node }) => <>{node ? directives.get(node) : null}</>,
+        div: ({ node, ...props }) =>
+          node && directives.has(node) ? directives.get(node) : <div {...props} />,
       },
     });
 

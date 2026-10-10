@@ -125,6 +125,35 @@ describe("Markdown", () => {
     expect(renderToStaticMarkup(<Markdown tree={document.tree} />)).toBe(html);
   });
 
+  test("preserves ordinary converted div elements and their properties", () => {
+    const document = parseMarkdown("converted.md", "Converted **content**.");
+    const paragraph = document.tree.children[0];
+    if (paragraph?.type !== "paragraph") throw new Error("Expected a paragraph.");
+    paragraph.data = { hName: "div", hProperties: { id: "converted", className: ["converted"] } };
+    const original = structuredClone(document.tree);
+
+    expect(renderToStaticMarkup(<Markdown tree={document.tree} />)).toBe(
+      '<div id="converted" class="converted">Converted <strong>content</strong>.</div>',
+    );
+    expect(document.tree).toEqual(original);
+  });
+
+  test("preserves ordinary div elements inside teaching directives", () => {
+    const document = parseMarkdown(
+      "converted.md",
+      ':::details{title="More"}\n\nConverted content.\n\n:::',
+    );
+    const directive = document.tree.children[0];
+    if (directive?.type !== "containerDirective") throw new Error("Expected a directive.");
+    const paragraph = directive.children[0];
+    if (paragraph?.type !== "paragraph") throw new Error("Expected a paragraph.");
+    paragraph.data = { hName: "div", hProperties: { id: "nested" } };
+
+    const html = renderToStaticMarkup(<Markdown tree={document.tree} />);
+    expect(html).toContain("<summary");
+    expect(html).toContain('<div id="nested">Converted content.</div>');
+  });
+
   test("drops unknown AST nodes instead of using a generic HTML fallback", () => {
     const tree = {
       type: "root",
