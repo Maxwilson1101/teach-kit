@@ -21,6 +21,7 @@ import {
 } from "mdast";
 import { definitions } from "mdast-util-definitions";
 import { createElement, Fragment, type OlHTMLAttributes, type ReactNode } from "react";
+import { Callout, isCalloutKind } from "./components/callout";
 
 type DefinitionLookup = (identifier: string) => Definition | undefined;
 
@@ -204,11 +205,23 @@ function renderBlockNode(node: RootContent, lookup: DefinitionLookup, key: numbe
  * Unsupported names render nothing; this function does not run validation.
  */
 function renderDirectiveNode(
-  _node: Extract<RootContent, { type: "containerDirective" }>,
-  _lookup: DefinitionLookup,
-  _key: number,
+  node: Extract<RootContent, { type: "containerDirective" }>,
+  lookup: DefinitionLookup,
+  key: number,
 ): ReactNode {
-  return null;
+  switch (node.name) {
+    case "callout": {
+      const kind = node.attributes?.kind;
+      if (!isCalloutKind(kind)) return null;
+      const title = node.attributes?.title;
+      const children = renderBlock(node.children, lookup);
+      return typeof title === "string"
+        ? createElement(Callout, { key, kind, title, children })
+        : createElement(Callout, { key, kind, children });
+    }
+    default:
+      return null;
+  }
 }
 
 /**
