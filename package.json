@@ -30,8 +30,10 @@
   "dependencies": {
     "bun-plugin-tailwind": "^0.1.2",
     "github-slugger": "^2.0.0",
+    "hast-util-to-jsx-runtime": "^2.3.6",
     "mdast-util-definitions": "^6.0.0",
     "mdast-util-directive": "^3.1.1",
+    "mdast-util-to-hast": "^13.2.1",
     "mdast-util-to-string": "^4.0.0",
     "react": "^19",
     "react-dom": "^19",
@@ -45,6 +47,7 @@
     "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.64.0",
     "@types/bun": "latest",
+    "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { type Root } from "mdast";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseMarkdown } from "../../../src/markdown/parse";
 import { Markdown } from "../../../src/web/markdown";
@@ -23,11 +24,24 @@ describe("Markdown", () => {
       ["- one", "- two", "", "1. first", "2. second", "", "- [x] done", "- [ ] todo"].join("\n"),
     );
 
-    expect(html).toContain("<ul><li>one</li><li>two</li></ul>");
-    expect(html).toContain("<ol><li>first</li><li>second</li></ol>");
+    expect(html).toContain("<ul>\n<li>one</li>\n<li>two</li>\n</ul>");
+    expect(html).toContain("<ol>\n<li>first</li>\n<li>second</li>\n</ol>");
     expect(html).toContain('type="checkbox"');
     expect(html).toContain("done");
     expect(html).toContain("todo");
+  });
+
+  test("keeps multiple paragraphs in a loose list item separate", () => {
+    const html = render("- First paragraph.\n\n  Second paragraph.\n- Next item.");
+
+    expect(html).toContain("<p>First paragraph.</p>");
+    expect(html).toContain("<p>Second paragraph.</p>");
+    expect(html).toContain("<p>Next item.</p>");
+    expect(html).not.toContain("First paragraph.Second paragraph.");
+  });
+
+  test("preserves a non-default ordered list start", () => {
+    expect(render("3. Third\n4. Fourth")).toContain('<ol start="3">');
   });
 
   test("renders fenced code with its language", () => {
@@ -68,6 +82,56 @@ describe("Markdown", () => {
 
   test("does not render raw HTML", () => {
     expect(render("<div>unsafe</div>\n\nText.")).not.toContain("unsafe");
+  });
+
+  test("keeps reference definitions available inside nested directives", () => {
+    const html = render(
+      [
+        ':::details{title="Source"}',
+        "",
+        "[Read][source]",
+        "",
+        ":::",
+        "",
+        "[source]: https://example.com",
+      ].join("\n"),
+    );
+
+    expect(html).toContain('<a href="https://example.com">Read</a>');
+  });
+
+  test("does not enable footnotes or unsupported directive forms", () => {
+    const html = render(
+      "Text[^note].\n\n[^note]: Hidden footnote.\n\n:::unknown\n\nHidden container.\n\n:::\n\n::leaf\n\n:badge[Hidden text]",
+    );
+
+    expect(html).toContain("Text");
+    expect(html).not.toContain("Hidden");
+    expect(html).not.toContain("footnote");
+    expect(html).not.toContain("<div");
+  });
+
+  test("does not mutate the shared AST or write section anchors", () => {
+    const document = parseMarkdown(
+      "lesson.md",
+      '## Section\n\n:::callout{kind="note"}\n\nBody.\n\n:::',
+    );
+    const original = structuredClone(document.tree);
+    const html = renderToStaticMarkup(<Markdown tree={document.tree} />);
+
+    expect(document.tree).toEqual(original);
+    expect(html).toContain("<h2>Section</h2>");
+    expect(html).not.toContain('id="section"');
+    expect(renderToStaticMarkup(<Markdown tree={document.tree} />)).toBe(html);
+  });
+
+  test("drops unknown AST nodes instead of using a generic HTML fallback", () => {
+    const tree = {
+      type: "root",
+      children: [{ type: "unsupported", value: "Hidden unknown node." }],
+    } as unknown as Root;
+
+    expect(renderToStaticMarkup(<Markdown tree={tree} />)).toBe("");
   });
 
   test("renders block quotes, thematic breaks, and nested emphasis", () => {

@@ -106,7 +106,7 @@ Preview summaries use the first non-empty paragraph, including paragraphs in lis
 
 Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
 
-The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
+The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Standard Markdown rendering reuses `mdast-util-to-hast` and `hast-util-to-jsx-runtime`, consuming the existing mdast tree without parsing the source again. A small adapter maps teaching directives to React components; raw HTML, footnotes, and unsupported nodes remain disabled. Code text is preserved without adding a trailing newline. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
 
 ### Installation and Commands
 
@@ -192,7 +192,7 @@ Type checking also rejects unused locals and parameters, missing return paths, a
 
 `bun run build` generates the public JavaScript entry, type declarations, and frontend assets in `dist/`. It does not yet build a course CLI. `bun run start` runs the source preview server with development features disabled; it is not a packaged production server.
 
-Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. Generated build output and test reports are ignored by Git.
+Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. A test-only preview on port 4323 exercises the Markdown renderer and teaching components independently of the unfinished lesson pages. Unit and integration tests also build, pack, and install the real artifact in a temporary consumer project, checking public types, content loading, frontend presence, and rendering dependencies; this does not yet cover packaged CLI or lesson-page workflows. Generated build output and test reports are ignored by Git.
 
 Development follows TDD:
 

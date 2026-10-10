@@ -14,10 +14,18 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: {
-    command: "bun run src/server/dev.ts",
-    url: "http://127.0.0.1:4322",
-    env: { PORT: "4322" },
-    reuseExistingServer: false,
-  },
+  webServer: [
+    {
+      command: "bun run src/server/dev.ts",
+      url: "http://127.0.0.1:4322",
+      env: { PORT: "4322" },
+      reuseExistingServer: false,
+    },
+    {
+      command: "bun run tests/helpers/preview-server.ts",
+      url: "http://127.0.0.1:4323",
+      env: { PORT: "4323" },
+      reuseExistingServer: false,
+    },
+  ],
 });
