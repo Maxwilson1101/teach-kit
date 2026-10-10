@@ -12,9 +12,12 @@ export interface DetailsProps {
  */
 export function Details({ title, children }: DetailsProps) {
   return (
-    <details className="my-6 rounded-lg border border-slate-200 bg-white px-4 py-3" data-details>
-      <summary className="cursor-pointer font-semibold text-slate-900">{title}</summary>
-      <div className="mt-3 space-y-3 text-slate-700 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+    <details
+      className="my-6 border-y border-border bg-background py-4 font-sans text-base"
+      data-details
+    >
+      <summary className="cursor-pointer font-semibold text-foreground">{title}</summary>
+      <div className="mt-3 space-y-3 text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
         {children}
       </div>
     </details>

@@ -81,6 +81,11 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
       jsxs,
       passNode: true,
       components: {
+        table: ({ node: _node, ...props }) => (
+          <section className="table-scroll" aria-label="Scrollable table">
+            <table {...props} />
+          </section>
+        ),
         div: ({ node, ...props }) =>
           node && directives.has(node) ? directives.get(node) : <div {...props} />,
       },

@@ -8,9 +8,9 @@ const CALLOUT_LABELS: Record<CalloutKind, string> = {
 };
 
 const CALLOUT_STYLES: Record<CalloutKind, string> = {
-  note: "border-sky-300 bg-sky-50",
-  tip: "border-emerald-300 bg-emerald-50",
-  warning: "border-amber-300 bg-amber-50",
+  note: "border-primary bg-secondary",
+  tip: "border-tip-border bg-tip",
+  warning: "border-warning-border bg-warning",
 };
 
 export interface CalloutProps {
@@ -24,11 +24,11 @@ export function Callout({ kind, title, children }: CalloutProps) {
   const label = title ?? CALLOUT_LABELS[kind];
   return (
     <aside
-      className={`my-6 rounded-r-lg border-l-4 py-3 pr-4 pl-4 ${CALLOUT_STYLES[kind]}`}
+      className={`my-8 border-l-2 px-5 py-4 font-sans text-base leading-relaxed ${CALLOUT_STYLES[kind]}`}
       data-callout={kind}
     >
-      <p className="mb-2 font-semibold text-slate-900">{label}</p>
-      <div className="space-y-3 text-slate-700 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+      <p className="mb-2 font-semibold text-foreground">{label}</p>
+      <div className="space-y-3 text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
         {children}
       </div>
     </aside>

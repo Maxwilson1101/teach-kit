@@ -25,18 +25,18 @@ export function Tabs({ tabs }: { tabs: TabItem[] }) {
       onValueChange={setActive}
       activationMode="automatic"
       orientation="horizontal"
-      className="my-6"
+      className="my-8 font-sans text-base leading-relaxed"
       data-tabs
     >
-      <TabsPrimitive.List loop className="flex flex-wrap gap-1 border-b border-slate-200">
+      <TabsPrimitive.List loop className="flex flex-wrap gap-1 border-b border-border">
         {tabs.map((tab) => (
           <TabsPrimitive.Trigger
             key={tab.id}
             value={tab.id}
             className={
               tab.id === active
-                ? "rounded-t-md border border-b-0 border-slate-200 bg-white px-4 py-2 font-medium text-slate-900"
-                : "rounded-t-md px-4 py-2 text-slate-600 hover:text-slate-900"
+                ? "border-b-2 border-foreground px-4 py-3 font-medium text-foreground"
+                : "border-b-2 border-transparent px-4 py-3 text-muted-foreground hover:text-foreground"
             }
           >
             {tab.title}
@@ -50,7 +50,7 @@ export function Tabs({ tabs }: { tabs: TabItem[] }) {
           forceMount
           hidden={tab.id !== active}
           tabIndex={tab.id === active ? 0 : -1}
-          className="space-y-3 pt-4 text-slate-700 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+          className="space-y-3 pt-4 text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
         >
           {tab.content}
         </TabsPrimitive.Content>
