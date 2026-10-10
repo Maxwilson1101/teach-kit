@@ -4,7 +4,7 @@ Teach Kit is a planned Bun package for turning Markdown lessons into a local cou
 
 ## Status
 
-This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The course API, CLI, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
+This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API and runtime validation are implemented. Content loading, the CLI, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 
@@ -23,7 +23,7 @@ Offline HTML export, multi-course management, learning progress, executable note
 
 ## Planned Consumer Experience
 
-The following API and commands describe the intended interface, not currently available functionality.
+The course configuration API below is implemented. Content loading, lesson rendering, and commands describe the intended interface and are not yet available.
 
 ### Project Layout
 
@@ -60,6 +60,8 @@ export default defineCourse({
   ],
 });
 ```
+
+`defineCourse()` validates the configuration at runtime and throws a `CourseConfigError` containing all validation issues, with paths such as `lessons[1]`. An empty `lessons` array is valid, but every index in a non-empty array must contain a valid lesson object. Sparse slots and explicit `undefined` entries are errors, not planned lessons.
 
 The configuration is the source of truth for lesson order, titles, and descriptions. Each lesson ID maps to `lessons/<id>.md`; paths resolve relative to the course entry rather than the current working directory.
 

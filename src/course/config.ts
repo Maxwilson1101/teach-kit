@@ -67,11 +67,12 @@ function validateLessons(issues: ValidationIssue[], value: unknown): LessonConfi
   }
 
   const seenIds = new Set<string>();
-  value.forEach((lesson, index) => {
+  for (let index = 0; index < value.length; index++) {
+    const lesson: unknown = value[index];
     const path = `lessons[${index}]`;
     if (!isRecord(lesson)) {
       issues.push({ path, message: "Expected a lesson object." });
-      return;
+      continue;
     }
 
     validateText(issues, `${path}.title`, lesson.title);
@@ -85,7 +86,7 @@ function validateLessons(issues: ValidationIssue[], value: unknown): LessonConfi
     } else {
       seenIds.add(id);
     }
-  });
+  }
 
   return value as LessonConfig[];
 }
@@ -94,6 +95,7 @@ function validateLessons(issues: ValidationIssue[], value: unknown): LessonConfi
  * Validates a course configuration and returns a new course object.
  * Text is checked for non-whitespace content but returned without trimming.
  * The lessons array and its objects are retained by reference, not cloned.
+ * Every lesson index must contain a valid object; sparse slots are rejected.
  *
  * @throws {CourseConfigError} When validation fails, with all detected issues.
  */

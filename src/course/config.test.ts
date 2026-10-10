@@ -55,6 +55,33 @@ describe("course configuration validation", () => {
     expect(error.issues.map(issue => issue.path)).toEqual(["lessons[0]", "lessons[1].title", "lessons[1].description"]);
   });
 
+  test("rejects every slot in an entirely sparse lessons array", () => {
+    const lessons = new Array<CourseConfig["lessons"][number]>(2);
+    const error = captureError(() => defineCourse({ ...validConfig, lessons }));
+    expect(error.issues).toEqual([
+      { path: "lessons[0]", message: "Expected a lesson object." },
+      { path: "lessons[1]", message: "Expected a lesson object." },
+    ]);
+  });
+
+  test("preserves sparse lesson indices and aggregates other validation issues", () => {
+    const lessons = new Array<CourseConfig["lessons"][number]>(5);
+    lessons[0] = { id: "same-id", title: "First", description: "First body." };
+    lessons[2] = { id: "same-id", title: "Second", description: "Second body." };
+    lessons[4] = { id: "last", title: "", description: "Last body." };
+    const error = captureError(() => defineCourse({ ...validConfig, title: "", lessons }));
+    expect(error.issues.map(issue => issue.path)).toEqual([
+      "title", "lessons[1]", "lessons[2].id", "lessons[3]", "lessons[4].title",
+    ]);
+  });
+
+  test("rejects an explicit undefined lesson with the same diagnostic as a sparse slot", () => {
+    const error = captureError(() =>
+      defineCourse({ ...validConfig, lessons: [undefined] } as unknown as CourseConfig),
+    );
+    expect(error.issues).toEqual([{ path: "lessons[0]", message: "Expected a lesson object." }]);
+  });
+
   test("rejects missing lesson title and description", () => {
     const error = captureError(() =>
       defineCourse({ ...validConfig, lessons: [{ id: "valid-id", title: "", description: "  " }] }),
