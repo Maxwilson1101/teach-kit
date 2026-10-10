@@ -22,6 +22,7 @@ import {
 import { definitions } from "mdast-util-definitions";
 import { createElement, Fragment, type OlHTMLAttributes, type ReactNode } from "react";
 import { Callout, isCalloutKind } from "./components/callout";
+import { Details } from "./components/details";
 
 type DefinitionLookup = (identifier: string) => Definition | undefined;
 
@@ -216,8 +217,13 @@ function renderDirectiveNode(
       const title = node.attributes?.title;
       const children = renderBlock(node.children, lookup);
       return typeof title === "string"
-        ? createElement(Callout, { key, kind, title, children })
-        : createElement(Callout, { key, kind, children });
+        ? createElement(Callout, { key, kind, title }, children)
+        : createElement(Callout, { key, kind }, children);
+    }
+    case "details": {
+      const title = node.attributes?.title;
+      if (typeof title !== "string" || title.trim() === "") return null;
+      return createElement(Details, { key, title }, renderBlock(node.children, lookup));
     }
     default:
       return null;

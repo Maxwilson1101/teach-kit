@@ -22,7 +22,7 @@ export function isCalloutKind(value: string | null | undefined): value is Callou
 export interface CalloutProps {
   kind: CalloutKind;
   title?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 /** Highlights definitions, conclusions, tips, and risks. */
