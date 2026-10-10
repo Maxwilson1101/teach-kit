@@ -22,9 +22,9 @@
     "lint:fix": "biome check . --write",
     "verify": "bun run lint && bun run typecheck && bun run coverage:core && bun run build",
     "typecheck": "tsc --noEmit",
-    "test": "bun test ./tests/unit ./tests/integration",
-    "test:coverage": "bun test ./tests/unit ./tests/integration --coverage",
-    "coverage:core": "bun run scripts/core-coverage.ts",
+    "test": "bun run build && bun test ./tests/unit ./tests/integration",
+    "test:coverage": "bun run build && bun test ./tests/unit ./tests/integration --coverage",
+    "coverage:core": "bun run build && bun run scripts/core-coverage.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

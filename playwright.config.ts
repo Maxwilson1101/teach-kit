@@ -16,7 +16,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "bun run src/server/dev.ts",
+      command: "bun run build && bun run src/server/dev.ts",
       url: "http://127.0.0.1:4322",
       env: { PORT: "4322" },
       reuseExistingServer: false,

@@ -19,6 +19,7 @@ export interface ModuleCoverage {
 export const CORE_MODULES: readonly string[] = [
   "src/course/config.ts",
   "src/course/content.ts",
+  "src/server/course-data.ts",
   "src/markdown/parse.ts",
   "src/markdown/directives.ts",
   "src/markdown/callout-kind.ts",

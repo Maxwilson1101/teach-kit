@@ -10,5 +10,4 @@ const app = (
     <App />
   </StrictMode>
 );
-import.meta.hot.data.root ??= createRoot(element);
-import.meta.hot.data.root.render(app);
+createRoot(element).render(app);

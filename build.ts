@@ -12,6 +12,7 @@ const results = await Promise.all([
   Bun.build({
     entrypoints: ["src/web/index.html"],
     outdir: "dist/web",
+    publicPath: "/",
     plugins: [tailwind],
     minify: true,
     target: "browser",

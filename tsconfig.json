@@ -8,6 +8,7 @@
     "types": ["bun", "react"],
 
     "moduleResolution": "bundler",
+    "paths": { "@/*": ["./src/*"], "teach-kit": ["./src/index.ts"] },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
