@@ -22,6 +22,7 @@ import {
 import { definitions } from "mdast-util-definitions";
 import { createElement, Fragment, type OlHTMLAttributes, type ReactNode } from "react";
 import { Callout, isCalloutKind } from "./components/callout";
+import { Column, Columns } from "./components/columns";
 import { Details } from "./components/details";
 import { type TabItem, Tabs } from "./components/tabs";
 
@@ -238,6 +239,17 @@ function renderDirectiveNode(
       }
       if (items.length === 0) return null;
       return createElement(Tabs, { key, tabs: items });
+    }
+    case "columns": {
+      const columns: ReactNode[] = [];
+      for (const child of node.children) {
+        if (child.type !== "containerDirective" || child.name !== "column") return null;
+        columns.push(
+          createElement(Column, { key: columns.length }, renderBlock(child.children, lookup)),
+        );
+      }
+      if (columns.length !== 2) return null;
+      return createElement(Columns, { key }, columns);
     }
     default:
       return null;
