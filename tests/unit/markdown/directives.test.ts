@@ -69,6 +69,47 @@ describe("validateDirectives", () => {
     ]);
   });
 
+  test.each(["constructor", "toString", "valueOf"])(
+    "rejects prototype property %s as an unknown directive without throwing",
+    (name) => {
+      expect(validate(`:::${name}\n\nBody.\n\n:::`)).toEqual([
+        {
+          severity: "error",
+          path: PATH,
+          line: 1,
+          column: 1,
+          message: `Unknown directive "${name}".`,
+        },
+      ]);
+    },
+  );
+
+  test.each(["constructor", "toString", "valueOf"])(
+    "rejects prototype property %s as an unsupported attribute",
+    (name) => {
+      expect(validate(`:::callout{kind="note" ${name}="x"}\n\nBody.\n\n:::`)).toEqual([
+        {
+          severity: "error",
+          path: PATH,
+          line: 1,
+          column: 1,
+          message: `Unsupported attribute "${name}" on directive "callout".`,
+        },
+      ]);
+    },
+  );
+
+  test("rejects an own __proto__ attribute on a synthetic directive node", () => {
+    const parsed = tree(':::callout{kind="note"}\n\nBody.\n\n:::');
+    const node = parsed.children[0];
+    if (node?.type !== "containerDirective") throw new Error("Expected a container directive.");
+    node.attributes = { kind: "note", ["__proto__"]: "x" };
+
+    expect(validateDirectives(parsed, PATH)).toMatchObject([
+      { message: 'Unsupported attribute "__proto__" on directive "callout".' },
+    ]);
+  });
+
   test("rejects leaf and text directives", () => {
     const source = ["Paragraph with :tip.", "", '::callout{kind="note"}', "", "::details"].join(
       "\n",

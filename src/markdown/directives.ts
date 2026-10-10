@@ -80,7 +80,7 @@ function validateAttributes(
   const attributes = node.attributes ?? {};
 
   for (const key of Object.keys(attributes)) {
-    if (!(key in rule.attributes)) {
+    if (!Object.hasOwn(rule.attributes, key)) {
       diagnostics.push(
         toDiagnostic(
           path,
@@ -197,7 +197,9 @@ export function validateDirectives(tree: Root, path: string): MarkdownDiagnostic
 
   const inspect = (node: RootContent, ancestors: readonly string[]): void => {
     if (node.type === "containerDirective") {
-      const rule = DIRECTIVE_RULES[node.name];
+      const rule = Object.hasOwn(DIRECTIVE_RULES, node.name)
+        ? DIRECTIVE_RULES[node.name]
+        : undefined;
       if (!rule) {
         diagnostics.push(toDiagnostic(path, node, `Unknown directive ${quoted(node.name)}.`));
       } else {
