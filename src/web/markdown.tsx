@@ -23,6 +23,7 @@ import { definitions } from "mdast-util-definitions";
 import { createElement, Fragment, type OlHTMLAttributes, type ReactNode } from "react";
 import { Callout, isCalloutKind } from "./components/callout";
 import { Details } from "./components/details";
+import { type TabItem, Tabs } from "./components/tabs";
 
 type DefinitionLookup = (identifier: string) => Definition | undefined;
 
@@ -224,6 +225,19 @@ function renderDirectiveNode(
       const title = node.attributes?.title;
       if (typeof title !== "string" || title.trim() === "") return null;
       return createElement(Details, { key, title }, renderBlock(node.children, lookup));
+    }
+    case "tabs": {
+      const items: TabItem[] = [];
+      for (const child of node.children) {
+        if (child.type !== "containerDirective" || child.name !== "tab") return null;
+        const title = child.attributes?.title;
+        if (typeof title !== "string" || title.trim() === "") return null;
+        const start = child.position?.start;
+        const id = start ? `${start.line}:${start.column}` : `tab-${items.length}`;
+        items.push({ id, title, content: renderBlock(child.children, lookup) });
+      }
+      if (items.length === 0) return null;
+      return createElement(Tabs, { key, tabs: items });
     }
     default:
       return null;
