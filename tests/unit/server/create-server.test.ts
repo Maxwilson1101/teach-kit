@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createServer } from "./create-server";
+import { createServer } from "../../../src/server/create-server";
 
 const servers: ReturnType<typeof createServer>[] = [];
 

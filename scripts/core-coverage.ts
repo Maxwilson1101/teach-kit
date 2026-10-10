@@ -70,7 +70,7 @@ export function evaluateCoreCoverage(
 
 if (import.meta.main) {
   const tests = Bun.spawn(
-    ["bun", "test", "./src", "./scripts", "./tests/integration", "--coverage", "--coverage-reporter=lcov"],
+    ["bun", "test", "./tests/unit", "./tests/integration", "--coverage", "--coverage-reporter=lcov"],
     { stdio: ["inherit", "inherit", "inherit"] },
   );
   const exitCode = await tests.exited;

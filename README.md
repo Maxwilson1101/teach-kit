@@ -137,6 +137,7 @@ src/
 └── web/                   # Browser pages, components, and styles
 
 tests/
+├── unit/                  # Unit tests for source modules and tooling
 ├── integration/           # Filesystem, CLI, and packed-package consumption
 ├── e2e/                   # Playwright browser tests
 ├── fixtures/              # Valid, invalid, and boundary content
@@ -148,7 +149,7 @@ examples/
 dist/                      # Generated package output; not committed
 ```
 
-This is the intended structure, not a list of directories already implemented. Unit tests will live alongside their source modules. Integration and browser tests will live under `tests/`.
+This is the intended structure, not a list of directories already implemented. All test files live under `tests/`: unit tests in `tests/unit/`, integration tests in `tests/integration/`, and browser tests in `tests/e2e/`. Source and tooling directories do not contain test files.
 
 `src/index.ts` is the public package entry and does not start a server. The scaffold preview runs through `src/server/dev.ts`; browser code lives in `src/web/`. Remaining directories will be introduced as their features are implemented.
 

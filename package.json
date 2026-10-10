@@ -16,8 +16,8 @@
     "start": "NODE_ENV=production bun src/server/dev.ts",
     "build": "bun run build.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test ./src ./scripts ./tests/integration",
-    "test:coverage": "bun test ./src ./scripts ./tests/integration --coverage",
+    "test": "bun test ./tests/unit ./tests/integration",
+    "test:coverage": "bun test ./tests/unit ./tests/integration --coverage",
     "coverage:core": "bun run scripts/core-coverage.ts",
     "test:e2e": "playwright test"
   },

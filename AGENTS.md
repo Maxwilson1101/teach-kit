@@ -14,6 +14,8 @@
 - This language rule includes comments, diagnostics, tests, fixtures,
   examples, and documentation. Preserve existing visual reference assets.
 - Write commit messages in English. Conversational responses may be Chinese.
+- Keep all test files under `tests/`: `unit/`, `integration/`, and `e2e/`.
+  Do not place test files alongside modules in `src/` or `scripts/`.
 
 ## Stage 1: Start a Task
 

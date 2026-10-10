@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { evaluateCoreCoverage, parseLcov } from "./core-coverage";
+import { evaluateCoreCoverage, parseLcov } from "../../../scripts/core-coverage";
 
 const report = [
   "SF:src/course/config.ts",

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { defineCourse, type CourseConfig } from "./index";
+import { defineCourse, type CourseConfig } from "../../src/index";
 
 test("exports the course configuration API from the package entry", () => {
   const config = {

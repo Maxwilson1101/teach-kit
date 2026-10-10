@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
-import { CourseLoadError, resolveLessonFile } from "./content";
+import { CourseLoadError, resolveLessonFile } from "../../../src/course/content";
 
 describe("resolveLessonFile", () => {
   test("resolves a lesson file inside the course lessons directory", () => {

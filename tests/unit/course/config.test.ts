@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CourseConfigError, defineCourse, type CourseConfig } from "./config";
+import { CourseConfigError, defineCourse, type CourseConfig } from "../../../src/course/config";
 
 const validConfig: CourseConfig = {
   title: "Message Passing",
