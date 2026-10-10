@@ -10,19 +10,26 @@
 import { stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { type Root, type RootContent } from "mdast";
+import { definitions } from "mdast-util-definitions";
 import { visit } from "unist-util-visit";
 import { type MarkdownDiagnostic, toDiagnostic } from "./diagnostics";
 
 const SAFE_LINK_PROTOCOLS: ReadonlySet<string> = new Set(["http:", "https:", "mailto:"]);
-const PROTOCOL_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
-
-/** Returns a diagnostic message when a link uses an unsafe protocol. */
+/**
+ * Returns an error message for an invalid URL or unsupported protocol, or
+ * `undefined` when allowed. Does not check target existence or anchor validity
+ * and does not rewrite or sanitize the supplied URL.
+ */
 export function unsafeLinkMessage(url: string): string | undefined {
-  const match = PROTOCOL_PATTERN.exec(url.trim());
-  if (!match) return undefined;
-  const protocol = `${(match[1] ?? "").toLowerCase()}:`;
-  if (SAFE_LINK_PROTOCOLS.has(protocol)) return undefined;
-  return `Unsupported link protocol "${protocol}".`;
+  let parsed: URL;
+  try {
+    // A safe base lets the platform parser classify relative links as well as protocols.
+    parsed = new URL(url.trim(), "https://teach-kit.invalid/");
+  } catch {
+    return "Invalid link URL.";
+  }
+  if (SAFE_LINK_PROTOCOLS.has(parsed.protocol)) return undefined;
+  return `Unsupported link protocol "${parsed.protocol}".`;
 }
 
 export type LocalAssetResult = { ok: true; file: string } | { ok: false; message: string };
@@ -32,25 +39,39 @@ function escapesCourseDirectory(courseDirectory: string, file: string): boolean 
   return path === "" || isAbsolute(path) || path.split(/[\\/]/).includes("..");
 }
 
-/** Resolves a local image source to an absolute path inside the course directory. */
+/**
+ * Resolves a URL path lexically inside the course directory, decoding it once.
+ * Query strings and fragments do not participate in filesystem lookup.
+ * Does not check existence or resolve symbolic links; symlink layouts are unsupported.
+ */
 export function resolveLocalAsset(courseDirectory: string, url: string): LocalAssetResult {
   const value = url.trim();
   if (value === "") return { ok: false, message: "Image source is empty." };
 
-  const match = PROTOCOL_PATTERN.exec(value);
-  if (match) {
-    const protocol = (match[1] ?? "").toLowerCase();
+  const parsed = URL.parse(value);
+  if (parsed) {
+    const protocol = parsed.protocol;
     return {
       ok: false,
-      message: `Only local images are supported, but found "${protocol}:" source.`,
+      message: `Only local images are supported, but found "${protocol}" source.`,
     };
   }
 
-  if (isAbsolute(value)) {
+  let path: string;
+  try {
+    // Decode before path normalization so encoded traversal cannot evade containment checks.
+    path = decodeURIComponent(value.split(/[?#]/, 1)[0] ?? "");
+  } catch {
+    return { ok: false, message: `Invalid image URL encoding: ${value}.` };
+  }
+  if (path === "" || path.includes("\0")) {
+    return { ok: false, message: "Image source has an empty or invalid path." };
+  }
+  if (isAbsolute(path)) {
     return { ok: false, message: `Absolute image paths are not supported: ${value}.` };
   }
 
-  const file = resolve(courseDirectory, value);
+  const file = resolve(courseDirectory, path);
   if (escapesCourseDirectory(courseDirectory, file)) {
     return { ok: false, message: `Image path escapes the course directory: ${value}.` };
   }
@@ -65,8 +86,9 @@ export interface ResourceValidationOptions {
 }
 
 /**
- * Validates links and images in a parsed tree.
- * Returns diagnostics sorted by document position.
+ * Validates inline and reference-style links and images in a parsed tree.
+ * Definitions use CommonMark precedence; unused definitions are not resources.
+ * Diagnostics point to each usage, sorted by document position. Does not mutate the tree.
  */
 export async function validateResources(
   tree: Root,
@@ -76,9 +98,18 @@ export async function validateResources(
   const links: { node: RootContent; url: string }[] = [];
   const images: { node: RootContent; url: string }[] = [];
 
+  const definition = definitions(tree);
   visit(tree, (node) => {
-    if (node.type === "link") links.push({ node, url: node.url });
-    else if (node.type === "image") images.push({ node, url: node.url });
+    if (node.type === "link" || node.type === "image") {
+      const resources = node.type === "link" ? links : images;
+      resources.push({ node, url: node.url });
+    } else if (node.type === "linkReference" || node.type === "imageReference") {
+      const target = definition(node.identifier);
+      if (target) {
+        const resources = node.type === "linkReference" ? links : images;
+        resources.push({ node, url: target.url });
+      }
+    }
   });
 
   for (const { node, url } of links) {

@@ -8,7 +8,11 @@ describe("validateResources filesystem checks", () => {
   test("accepts an existing local asset and reports a missing one", async () => {
     const course = await createTempCourse({
       config: { title: "Media course", description: "Checks assets.", lessons: [] },
-      extraFiles: { "assets/present.png": "png" },
+      extraFiles: {
+        "assets/present.png": "png",
+        "assets/my diagram.png": "png",
+        "assets/caf\u00e9.png": "png",
+      },
     });
 
     try {
@@ -18,7 +22,18 @@ describe("validateResources filesystem checks", () => {
         "",
         "![present](assets/present.png)",
         "",
-        "![missing](assets/missing.png)",
+        "![missing][missing]",
+        "",
+        "![encoded](assets/my%20diagram.png?v=1#preview)",
+        "",
+        "![unicode](assets/caf%C3%A9.png)",
+        "",
+        "![present][]",
+        "",
+        "![present]",
+        "",
+        "[missing]: assets/missing.png",
+        "[present]: assets/present.png",
       ].join("\n");
 
       const document = parseMarkdown(path, source);

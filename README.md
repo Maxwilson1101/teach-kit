@@ -104,7 +104,9 @@ Root-level headings (`##`) define primary lesson sections and navigation entries
 
 Preview summaries use the first non-empty paragraph, including paragraphs in lists and block quotes. Subheadings, code, tables, raw HTML, and other non-prose containers do not supply summaries. Inline formatting preserves text boundaries, and image alternative text contributes to the summary. Sections without prose have an empty summary.
 
-The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Teach Kit owns the authoring policies and filesystem checks, while generic Markdown mechanics come from the unified ecosystem.
+Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
+
+The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
 
 ### Installation and Commands
 

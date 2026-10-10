@@ -22,6 +22,15 @@ describe("unsafeLinkMessage", () => {
     );
     expect(unsafeLinkMessage("VBScript:msgbox(1)")).toBe('Unsupported link protocol "vbscript:".');
     expect(unsafeLinkMessage("data:text/html,<b>x</b>")).toBe('Unsupported link protocol "data:".');
+    expect(unsafeLinkMessage("java\tscript:alert(1)")).toBe(
+      'Unsupported link protocol "javascript:".',
+    );
+  });
+});
+
+describe("invalid link URLs", () => {
+  test("reports malformed absolute URLs instead of treating them as relative", () => {
+    expect(unsafeLinkMessage("https://[")).toBe("Invalid link URL.");
   });
 });
 
@@ -57,6 +66,36 @@ describe("resolveLocalAsset", () => {
     });
   });
 
+  test("decodes URL paths and ignores query strings and fragments", () => {
+    expect(resolveLocalAsset("/course", "assets/my%20diagram.png?v=1#preview")).toEqual({
+      ok: true,
+      file: resolve("/course", "assets/my diagram.png"),
+    });
+    expect(resolveLocalAsset("/course", "assets/caf%C3%A9.png")).toEqual({
+      ok: true,
+      file: resolve("/course", "assets/caf\u00e9.png"),
+    });
+    expect(resolveLocalAsset("/course", "assets/a%23b%3Fc.png")).toEqual({
+      ok: true,
+      file: resolve("/course", "assets/a#b?c.png"),
+    });
+  });
+
+  test("rejects malformed encodings and decoded unsafe paths", () => {
+    for (const url of [
+      "assets/%ZZ.png",
+      "assets/%E0%A4.png",
+      "%2Fetc/passwd",
+      "%2e%2e/secret.png",
+      "assets/%2e%2e/%2e%2e/secret.png",
+      "assets/a%00.png",
+      "#preview",
+      "?v=1",
+    ]) {
+      expect(resolveLocalAsset("/course", url).ok).toBe(false);
+    }
+  });
+
   test("rejects an empty source", () => {
     expect(resolveLocalAsset("/course", "  ")).toMatchObject({
       ok: false,
@@ -85,6 +124,42 @@ describe("validateResources", () => {
         message: 'Unsupported link protocol "javascript:".',
       },
     ]);
+  });
+
+  test("validates full, collapsed, and shortcut references at their usage positions", async () => {
+    const source = [
+      "[bad][Target]",
+      "",
+      "[target][]",
+      "",
+      "[target]",
+      "",
+      "![remote][pic]",
+      "",
+      "[TARGET]: javascript:alert(1)",
+      "",
+      "[pic]: https://example.com/a.png",
+      "",
+      "[target]: https://example.com",
+    ].join("\n");
+    const document = parseMarkdown("references.md", source);
+    const diagnostics = await validateResources(document.tree, {
+      path: document.path,
+      courseDirectory: "/course",
+    });
+    expect(diagnostics.map(({ line, message }) => ({ line, message }))).toEqual([
+      { line: 1, message: 'Unsupported link protocol "javascript:".' },
+      { line: 3, message: 'Unsupported link protocol "javascript:".' },
+      { line: 5, message: 'Unsupported link protocol "javascript:".' },
+      { line: 7, message: 'Only local images are supported, but found "https:" source.' },
+    ]);
+  });
+
+  test("does not validate unused definitions or unresolved literal references", async () => {
+    const document = parseMarkdown("references.md", "[unknown]\n\n[unused]: javascript:alert(1)");
+    expect(
+      await validateResources(document.tree, { path: document.path, courseDirectory: "/course" }),
+    ).toEqual([]);
   });
 
   test("reports unsafe image sources", async () => {
