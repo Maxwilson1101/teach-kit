@@ -5,7 +5,8 @@ await rm(new URL("./dist", import.meta.url), { recursive: true, force: true });
 
 const results = await Promise.all([
   Bun.build({
-    entrypoints: ["src/index.ts"],
+    entrypoints: ["src/index.ts", "src/server/cli.ts"],
+    root: "src",
     outdir: "dist",
     target: "bun",
   }),
@@ -34,4 +35,4 @@ const declarations = Bun.spawn(["bun", "x", "--no-install", "tsc", "-p", "tsconf
 });
 if ((await declarations.exited) !== 0) throw new Error("Declaration build failed.");
 
-console.log("Built the public entry, declarations, and frontend scaffold.");
+console.log("Built the public entry, CLI, declarations, and course frontend.");

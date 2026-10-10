@@ -10,12 +10,15 @@
       "import": "./dist/index.js"
     }
   },
+  "bin": {
+    "teach-kit": "./dist/server/cli.js"
+  },
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "dev": "bun --hot src/server/dev.ts",
+    "dev": "bun run build && bun src/server/dev.ts",
     "start": "NODE_ENV=production bun src/server/dev.ts",
     "build": "bun run build.ts",
     "lint": "biome check . --error-on-warnings",

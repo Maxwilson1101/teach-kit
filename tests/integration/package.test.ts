@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { chromium } from "@playwright/test";
 
 const project = resolve(import.meta.dir, "../..");
 
@@ -19,7 +20,7 @@ async function run(args: string[], cwd: string): Promise<void> {
   expect(exitCode, `${args.join(" ")}\n${stdout}\n${stderr}`).toBe(0);
 }
 
-test("installs the packed artifact with public types, content loading, and rendering dependencies", async () => {
+test("installs the packed artifact with types, CLI, browser pages, and Markdown refresh", async () => {
   const directory = await mkdtemp(join(tmpdir(), "teach-kit-package-"));
   try {
     await run(["run", "build"], project);
@@ -87,6 +88,63 @@ assert.match(tabs, /Installed panel/);
 `,
     );
     await run(["run", "check.ts"], directory);
+    const installedCli = join(directory, "node_modules/teach-kit/dist/server/cli.js");
+    await run(["run", "node_modules/.bin/teach-kit", "check", "course/index.ts"], directory);
+    const preview = Bun.spawn([process.execPath, installedCli, "dev", "course/index.ts"], {
+      cwd: directory,
+      env: { ...process.env, PORT: "0" },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+    try {
+      const reader = preview.stdout.getReader();
+      let startup = "";
+      while (!startup.includes("http://")) {
+        const next = await reader.read();
+        if (next.done)
+          throw new Error(`Installed preview failed: ${await new Response(preview.stderr).text()}`);
+        startup += new TextDecoder().decode(next.value);
+      }
+      const url = startup.match(/http:\/\/[^\s]+/)?.[0];
+      if (!url) throw new Error("Installed preview URL is missing.");
+      browser = await chromium.launch({ headless: true });
+      for (const viewport of [
+        { width: 1280, height: 800 },
+        { width: 393, height: 851 },
+      ]) {
+        const page = await browser.newPage({ viewport });
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        await page.goto(url);
+        await page.getByRole("heading", { name: "Packed course", exact: true }).waitFor();
+        expect(await page.getByRole("link", { name: /Ready/ }).count()).toBe(1);
+        expect(await page.getByRole("link", { name: /Planned/ }).count()).toBe(0);
+        await page.getByRole("link", { name: /Ready/ }).click();
+        await page.getByText("Body.", { exact: true }).waitFor();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await Bun.write(
+          join(directory, "course/lessons/ready.md"),
+          "## Ready\n\nRefreshed packed body.",
+        );
+        await page.reload();
+        await page.getByText("Refreshed packed body.", { exact: true }).waitFor();
+        expect(errors).toEqual([]);
+        await page.close();
+        await Bun.write(join(directory, "course/lessons/ready.md"), "## Ready\n\nBody.");
+      }
+      preview.kill("SIGTERM");
+      expect(await preview.exited).toBe(0);
+    } finally {
+      await browser?.close();
+      preview.kill();
+      await preview.exited;
+    }
     await Bun.write(
       join(directory, "tsconfig.json"),
       JSON.stringify({
