@@ -4,7 +4,7 @@ Teach Kit is a planned Bun package for turning Markdown lessons into a local cou
 
 ## Status
 
-This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API and runtime validation are implemented. Content loading, the CLI, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
+This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API and course content loading are implemented. The CLI, lesson rendering, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 
@@ -23,7 +23,7 @@ Offline HTML export, multi-course management, learning progress, executable note
 
 ## Planned Consumer Experience
 
-The course configuration API below is implemented. Content loading, lesson rendering, and commands describe the intended interface and are not yet available.
+The course configuration API and content loading described below are implemented. Lesson rendering and the commands describe the intended interface and are not yet available.
 
 ### Project Layout
 
@@ -65,7 +65,9 @@ export default defineCourse({
 
 The configuration is the source of truth for lesson order, titles, and descriptions. Each lesson ID maps to `lessons/<id>.md`; paths resolve relative to the course entry rather than the current working directory.
 
-A missing lesson file is shown as planned. An existing but invalid lesson is reported as an error, not treated as missing. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
+Course configuration imports follow Bun's module cache; restart the preview process after editing `index.ts`. Symbolic links are outside the supported course layout and are not explicitly rejected by the current loader. Generated status currently means the lesson source was read, not that Markdown validation has run.
+
+A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. Markdown syntax validation is planned but not yet implemented. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
 
 ### Lesson Authoring
 
@@ -166,10 +168,13 @@ Available verification commands:
 ```bash
 bun run typecheck
 bun run test
+bun run coverage:core
 bun x playwright install chromium
 bun run test:e2e
 bun run build
 ```
+
+`bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration or content loading drops below 90% line coverage.
 
 `bun run build` generates the public JavaScript entry, type declarations, and frontend assets in `dist/`. It does not yet build a course CLI. `bun run start` runs the source preview server with development features disabled; it is not a packaged production server.
 
