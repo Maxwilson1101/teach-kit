@@ -16,7 +16,14 @@ export interface ModuleCoverage {
 }
 
 /** Core modules that must each meet the line coverage minimum. */
-export const CORE_MODULES: readonly string[] = ["src/course/config.ts", "src/course/content.ts"];
+export const CORE_MODULES: readonly string[] = [
+  "src/course/config.ts",
+  "src/course/content.ts",
+  "src/markdown/parse.ts",
+  "src/markdown/sections.ts",
+  "src/markdown/resources.ts",
+  "src/markdown/diagnostics.ts",
+];
 
 export const MINIMUM_LINE_COVERAGE = 0.9;
 
