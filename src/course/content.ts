@@ -5,8 +5,9 @@
  * Lesson paths resolve against the course entry directory.
  */
 
-import { readFile, stat } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { type Dirent } from "node:fs";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { CourseConfigError, defineCourse, type CourseConfig, type LessonConfig } from "./config";
 
@@ -78,6 +79,10 @@ export interface LoadedCourse {
   directory: string;
   /** Configured lessons in reading order, including those with missing files. */
   lessons: LoadedLesson[];
+  /**
+   * Warnings for unplanned top-level Markdown files in the lessons directory.
+   * Loading failures throw instead of returning error diagnostics.
+   */
   diagnostics: ContentDiagnostic[];
 }
 
@@ -87,6 +92,34 @@ function isMissingFile(error: unknown): boolean {
     error !== null &&
     (error as { code?: unknown }).code === "ENOENT"
   );
+}
+
+/**
+ * Finds top-level `lessons/*.md` files whose id is absent from the plan.
+ * Nested directories and non-markdown files are ignored; every planned lesson
+ * maps to exactly one top-level file.
+ */
+async function findUnplannedLessons(directory: string, plannedIds: ReadonlySet<string>): Promise<ContentDiagnostic[]> {
+  const lessonsDirectory = join(directory, "lessons");
+  let entries: Dirent[];
+  try {
+    entries = await readdir(lessonsDirectory, { withFileTypes: true });
+  } catch (error) {
+    if (isMissingFile(error)) return [];
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CourseLoadError(lessonsDirectory, `Failed to scan the lessons directory: ${message}`);
+  }
+
+  return entries
+    .filter(entry => entry.isFile() && entry.name.endsWith(".md"))
+    .map(entry => ({ entry, id: entry.name.slice(0, -3) }))
+    .filter(({ id }) => !plannedIds.has(id))
+    .map(({ entry }): ContentDiagnostic => ({
+      severity: "warning",
+      path: join(lessonsDirectory, entry.name),
+      message: `Markdown file is not part of the course plan: ${entry.name}.`,
+    }))
+    .sort((left, right) => left.path.localeCompare(right.path));
 }
 
 async function importEntry(entry: string): Promise<unknown> {
@@ -124,6 +157,7 @@ async function loadLesson(directory: string, lesson: LessonConfig): Promise<Load
 /**
  * Loads course configuration and lesson sources in the configured order.
  * Missing lesson files are planned content; unreadable files cause an error.
+ * Unplanned top-level Markdown files produce warnings, not additional lessons.
  * Markdown parsing and validation are not performed by this loader.
  *
  * Entry imports follow the runtime module cache. Restart the process after
@@ -134,13 +168,14 @@ async function loadLesson(directory: string, lesson: LessonConfig): Promise<Load
  * not absolute. Defaults to `index.ts`; lessons resolve against its directory.
  * @throws {CourseConfigError} When the entry exports invalid configuration.
  * @throws {CourseLoadError} When the entry cannot be loaded or lesson content
- * cannot be read.
+ * cannot be read or scanned.
  */
 export async function loadCourse(entryPath = "index.ts"): Promise<LoadedCourse> {
   const entry = resolve(entryPath);
   const directory = dirname(entry);
   const config = defineCourse((await importEntry(entry)) as CourseConfig);
   const lessons = await Promise.all(config.lessons.map(lesson => loadLesson(directory, lesson)));
+  const diagnostics = await findUnplannedLessons(directory, new Set(config.lessons.map(lesson => lesson.id)));
 
   return {
     title: config.title,
@@ -148,6 +183,6 @@ export async function loadCourse(entryPath = "index.ts"): Promise<LoadedCourse> 
     entry,
     directory,
     lessons,
-    diagnostics: [],
+    diagnostics,
   };
 }

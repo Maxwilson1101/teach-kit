@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { CourseConfigError, CourseLoadError, loadCourse } from "../../src/index";
 import type { CourseConfig } from "../../src/index";
 import { createTempCourse, packageEntryUrl, type TempCourse, type TempCourseOptions } from "../helpers/temp-course";
@@ -136,5 +136,43 @@ describe("loadCourse", () => {
     await mkdir(join(course.directory, "lessons", "mailbox.md"), { recursive: true });
 
     expect(await captureError(() => loadCourse(course.entry))).toBeInstanceOf(CourseLoadError);
+  });
+
+  test("warns about top-level markdown files that are not part of the plan", async () => {
+    const course = await makeCourse({ config, extraFiles: { "lessons/orphan.md": "## Orphan\n" } });
+
+    const loaded = await loadCourse(course.entry);
+
+    expect(loaded.diagnostics).toEqual([
+      {
+        severity: "warning",
+        path: join(course.directory, "lessons", "orphan.md"),
+        message: "Markdown file is not part of the course plan: orphan.md.",
+      },
+    ]);
+    expect(loaded.lessons.map(lesson => lesson.id)).toEqual(["message-lifecycle", "mailbox"]);
+  });
+
+  test("ignores non-markdown files and nested directories", async () => {
+    const course = await makeCourse({
+      config,
+      extraFiles: {
+        "lessons/notes.txt": "not a lesson",
+        "lessons/archive/old.md": "## Old\n",
+      },
+    });
+
+    expect((await loadCourse(course.entry)).diagnostics).toEqual([]);
+  });
+
+  test("sorts unplanned markdown warnings by file name", async () => {
+    const course = await makeCourse({
+      config,
+      extraFiles: { "lessons/zeta.md": "## Zeta\n", "lessons/alpha.md": "## Alpha\n" },
+    });
+
+    const loaded = await loadCourse(course.entry);
+
+    expect(loaded.diagnostics.map(diagnostic => basename(diagnostic.path))).toEqual(["alpha.md", "zeta.md"]);
   });
 });
