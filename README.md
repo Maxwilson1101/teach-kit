@@ -4,7 +4,7 @@ Teach Kit is a planned Bun package for turning Markdown lessons into a local cou
 
 ## Status
 
-This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API and course content loading are implemented. The CLI, lesson rendering, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
+This repository has a minimal Bun + React + Tailwind application scaffold, a side-effect-free public entry, a frontend build, and unit/browser test infrastructure. The typed course configuration API, course content loading, and a shared Markdown AST pipeline are implemented. The CLI, lesson rendering, and end-to-end package distribution described below are not implemented yet. The package name is provisional.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 
@@ -67,7 +67,7 @@ The configuration is the source of truth for lesson order, titles, and descripti
 
 Course configuration imports follow Bun's module cache; restart the preview process after editing `index.ts`. Symbolic links are outside the supported course layout and are not explicitly rejected by the current loader. Generated status currently means the lesson source was read, not that Markdown validation has run.
 
-A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. Markdown syntax validation is planned but not yet implemented. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
+A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. The shared pipeline in `src/markdown/` parses lesson sources into an AST, derives level-two sections with unique anchors and plain-text summaries, and validates links and local images. Raw HTML is reported as a located error rather than rendered. Links may use `http`, `https`, or `mailto` protocols, relative paths, or anchors; any other protocol is rejected. Images are local course assets only: remote, absolute, and escaping paths are errors, and a missing asset file is an error. The loader itself does not parse Markdown yet; the renderer and future `check` command consume the pipeline. Directives are planned but not yet implemented. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
 
 ### Lesson Authoring
 
@@ -101,6 +101,8 @@ Planned directives:
 Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches.
 
 Level-two headings (`##`) define primary lesson sections and navigation entries. Component-internal headings do not enter the section navigation. Preview summaries are derived from ordinary section text.
+
+The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Teach Kit owns the authoring policies and filesystem checks, while generic Markdown mechanics come from the unified ecosystem.
 
 ### Installation and Commands
 
@@ -182,7 +184,7 @@ bun run build
 
 Type checking also rejects unused locals and parameters, missing return paths, and explicit `undefined` assignments to optional properties that do not allow them. Isolated-module checking matches Bun's per-file transpilation, and consistent filename casing helps prevent cross-platform import failures.
 
-`bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration or content loading drops below 90% line coverage.
+`bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration, content loading, or Markdown pipeline modules drop below 90% line coverage.
 
 `bun run build` generates the public JavaScript entry, type declarations, and frontend assets in `dist/`. It does not yet build a course CLI. `bun run start` runs the source preview server with development features disabled; it is not a packaged production server.
 
