@@ -4,7 +4,7 @@ Teach Kit is a Bun package for turning Markdown lessons into a local course prev
 
 ## Status
 
-Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
+Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Desktop section anchor links are implemented; section previews, active-section tracking, a narrow-screen outline, syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 

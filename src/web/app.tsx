@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { type CourseOverview, type LessonOverview, type LessonPage } from "../course/page";
+import { SectionNavigation } from "./components/section-navigation";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import { Markdown } from "./markdown";
@@ -107,6 +108,7 @@ export function CourseView({
         </div>
         {lesson && page ? (
           <>
+            <SectionNavigation key={lesson.id} sections={page.sections} />
             <article aria-label={lesson.title} className="lesson-prose">
               <Markdown tree={page.tree} />
             </article>

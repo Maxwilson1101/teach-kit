@@ -108,6 +108,37 @@
   .skip-link:focus {
     @apply not-sr-only fixed top-3 left-3 z-50 rounded-md bg-card px-4 py-2 text-primary;
   }
+  .section-rail {
+    display: none;
+    position: fixed;
+    left: max(24px, calc((100vw - 760px) / 2 - 80px));
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    z-index: 20;
+  }
+  .section-rail a {
+    display: flex;
+    width: 44px;
+    min-height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+  }
+  .section-tick {
+    display: block;
+    width: 12px;
+    height: 2px;
+    background: var(--muted-foreground);
+    opacity: 0.45;
+  }
+  .section-rail a:hover .section-tick,
+  .section-rail a:focus-visible .section-tick {
+    background: var(--primary);
+    opacity: 1;
+    width: 20px;
+  }
   .lesson-prose {
     @apply font-serif text-lg leading-[1.75] sm:text-xl;
     min-width: 0;
@@ -177,6 +208,12 @@
   }
   .lesson-prose > :last-child {
     margin-bottom: 0;
+  }
+}
+
+@media (min-width: 1000px) {
+  .section-rail {
+    display: block;
   }
 }
 
