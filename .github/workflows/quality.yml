@@ -10,7 +10,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -22,3 +22,5 @@ jobs:
         run: bun x playwright install --with-deps chromium
       - name: Check lint, types, core coverage, and build
         run: bun run verify
+      - name: Run the Playwright browser suite
+        run: bun run test:e2e

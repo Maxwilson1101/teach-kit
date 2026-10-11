@@ -1,0 +1,12 @@
+# Keep text files as LF in the repository and the working tree.
+* text=auto eol=lf
+
+# Leave binary assets untouched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
