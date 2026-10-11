@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { parseMarkdown } from "../../../src/markdown/parse";
 import {
+  imageInspectionMessage,
   resolveCourseResource,
   resolveLocalAsset,
   unsafeLinkMessage,
@@ -146,6 +147,24 @@ describe("resolveCourseResource", () => {
   test("leaves missing and escaping resources unchanged", () => {
     expect(resolveCourseResource("/course", "../secret.png")).toEqual({ kind: "unchanged" });
     expect(resolveCourseResource("/course", "  ")).toEqual({ kind: "unchanged" });
+  });
+});
+
+describe("imageInspectionMessage", () => {
+  test("reports a missing file as a missing image", () => {
+    expect(imageInspectionMessage({ code: "ENOENT" }, "assets/missing.png")).toBe(
+      "Image file does not exist: assets/missing.png.",
+    );
+  });
+
+  test("reports any other inspection failure with its reason", () => {
+    const error = Object.assign(new Error("ENOTDIR: not a directory, stat"), { code: "ENOTDIR" });
+    expect(imageInspectionMessage(error, "assets/blocked/image.png")).toBe(
+      "Failed to inspect image file assets/blocked/image.png: ENOTDIR: not a directory, stat",
+    );
+    expect(imageInspectionMessage("plain failure", "assets/blocked/image.png")).toBe(
+      "Failed to inspect image file assets/blocked/image.png: plain failure",
+    );
   });
 });
 

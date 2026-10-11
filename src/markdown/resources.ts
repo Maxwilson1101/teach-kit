@@ -128,6 +128,19 @@ export function resolveCourseResource(courseDirectory: string, url: string): Cou
   return { kind: "local", url: `${served}${suffix}`, file: asset.file };
 }
 
+/**
+ * Describes why an image file could not be inspected.
+ * A missing file is reported as a failure to read the referenced asset.
+ */
+export function imageInspectionMessage(error: unknown, shown: string): string {
+  const missing =
+    typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT";
+  const reason = error instanceof Error ? error.message : String(error);
+  return missing
+    ? `Image file does not exist: ${shown}.`
+    : `Failed to inspect image file ${shown}: ${reason}`;
+}
+
 export interface ResourceValidationOptions {
   /** File path used in diagnostics, normally the lesson Markdown file. */
   path: string;
@@ -174,7 +187,7 @@ export async function validateResources(
       continue;
     }
 
-    const shown = relative(options.courseDirectory, result.file) || url;
+    const shown = relative(options.courseDirectory, result.file).split(sep).join("/") || url;
     try {
       const details = await stat(result.file);
       if (!details.isFile()) {
@@ -183,15 +196,7 @@ export async function validateResources(
         );
       }
     } catch (error) {
-      const missing =
-        typeof error === "object" &&
-        error !== null &&
-        (error as { code?: unknown }).code === "ENOENT";
-      const reason = error instanceof Error ? error.message : String(error);
-      const message = missing
-        ? `Image file does not exist: ${shown}.`
-        : `Failed to inspect image file ${shown}: ${reason}`;
-      diagnostics.push(toDiagnostic(options.path, node, message));
+      diagnostics.push(toDiagnostic(options.path, node, imageInspectionMessage(error, shown)));
     }
   }
 
