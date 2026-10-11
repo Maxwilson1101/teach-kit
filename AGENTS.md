@@ -9,8 +9,6 @@
 - The package owns the preview server, rendering, styling, and navigation.
 - Do not introduce multi-course management, offline HTML export, learning
   progress, executable notebooks, or arbitrary JSX/CSS authoring into the MVP.
-- Write all repository file content in English except `PLAN.md`, which must
-  be written in Chinese.
 - This language rule includes comments, diagnostics, tests, fixtures,
   examples, and documentation. Preserve existing visual reference assets.
 - Write commit messages in English. Conversational responses may be Chinese.
@@ -19,18 +17,17 @@
 
 ## Stage 1: Start a Task
 
-1. Read `PLAN.md` and relevant source files before making changes.
-2. Inspect `git status` and identify existing user changes. Do not overwrite
+1. Inspect `git status` and identify existing user changes. Do not overwrite
    or include unrelated changes.
-3. Define the task's observable behavior, acceptance criteria, and boundaries.
-4. Select the required test layers:
+2. Define the task's observable behavior, acceptance criteria, and boundaries.
+3. Select the required test layers:
    - Unit tests for configuration, parsing, validation, and metadata.
    - Integration tests for filesystem, CLI, server, and package behavior.
    - Playwright tests for browser interactions and responsive presentation.
-5. Plan one independently reviewable change per commit. Split unrelated work.
-6. Confirm that the task is within the agreed MVP scope. Request clarification
+4. Plan one independently reviewable change per commit. Split unrelated work.
+5. Confirm that the task is within the agreed MVP scope. Request clarification
    rather than silently expanding scope.
-7. Follow explicit user instructions about approval and committing. If the
+6. Follow explicit user instructions about approval and committing. If the
    user requests review before a commit, stop after verification and wait.
 
 ## Stage 2: Implement with TDD

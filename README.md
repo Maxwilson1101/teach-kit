@@ -6,8 +6,6 @@ Teach Kit 是一个 Bun 软件包，可以把 Markdown 课程渲染为本地预�
 
 Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, hover/focus previews, active-section tracking, and a narrow-screen outline are implemented. Syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
 
-See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
-
 ## MVP Scope
 
 - One consuming project represents one course.
@@ -175,8 +173,6 @@ example/                   # A course with two available and two planned lessons
 ├── index.ts
 ├── lessons/               # Prose and teaching components; no code or Mermaid
 └── assets/                # Local SVG illustration
-
-dist/                      # Generated package output; not committed
 ```
 
 All test files live under `tests/`: unit tests in `tests/unit/`, integration tests in `tests/integration/`, and browser tests in `tests/e2e/`. Source and tooling directories do not contain test files.
@@ -184,55 +180,6 @@ All test files live under `tests/`: unit tests in `tests/unit/`, integration tes
 `src/index.ts` is the public package entry and does not start a server. The repository preview runs through `src/server/dev.ts` using `example/index.ts` by default; the consumer CLI lives in `src/server/cli.ts`. Browser code lives in `src/web/`.
 
 Course content is read at runtime, while the package frontend is built in advance. Package installation tests use an actual packed artifact in an independent project, including CLI validation and desktop/narrow-screen browser navigation.
-
-## 开发
-
-Install dependencies and preview the example (the command builds the package first):
-
-```bash
-bun install
-bun run dev
-```
-
-Available verification commands:
-
-```bash
-bun run lint
-bun run typecheck
-bun run test
-bun run coverage:core
-bun x playwright install chromium
-bun run test:e2e
-bun run build
-```
-
-`bun run lint` checks formatting, import organization, and recommended Biome lint rules without modifying files. Warnings fail the gate. `bun run lint:fix` applies safe automatic fixes; review the diff afterward. Biome uses two-space indentation, a 100-column target width, and inline `type` specifiers. Dependencies and generated output are excluded; source and tests are checked.
-
-`bun run verify` runs lint, type checks, core coverage tests, and the build in order, stopping at the first failure. The GitHub Actions quality job runs the same command on pushes and pull requests. Unit and integration tests, including packed-package consumption with Chromium, run through the coverage command. The full Playwright suite is an additional required check. Install Chromium before running verification. Repository branch protection must require the `quality` job to prevent merging failures.
-
-Type checking also rejects unused locals and parameters, missing return paths, and explicit `undefined` assignments to optional properties that do not allow them. Isolated-module checking matches Bun's per-file transpilation, and consistent filename casing helps prevent cross-platform import failures.
-
-`bun run test` runs unit and integration tests. `bun run coverage:core` runs them again with an LCOV report and fails when configuration, content loading, or Markdown pipeline modules drop below 90% line coverage.
-
-`bun run build` generates the public JavaScript entry, CLI, type declarations, and frontend assets in `dist/`. `bun run start` runs the repository example using an existing build; it is not a separate production-deployment workflow.
-
-Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. The main preview on port 4322 exercises the real example; a test-only preview on port 4323 exercises the renderer and components independently. The packed-package integration test installs the artifact in a temporary consumer, validates public types, starts its installed CLI, opens the overview and a lesson in Chromium, and verifies desktop/narrow-screen section jumps, Markdown refresh, and process cleanup. Generated build output and test reports are ignored by Git.
-
-### 主题与组件
-
-`components.json` configures shadcn for React, Tailwind v4, CSS variables, and the `@/` source alias. Registry components live in `src/web/components/ui/`; pages compose Badge and Button without duplicating their primitives. Course items use subtle dividing rules, and lessons render as continuous articles rather than section cards. `src/web/lib/utils.ts` provides the standard `clsx` + `tailwind-merge` utility. Existing accessible tabs remain backed by Radix; disclosures use native HTML semantics.
-
-Theme colors and radii belong in `src/web/styles/globals.css`, using semantic tokens such as `background`, `card`, `primary`, and `muted-foreground`. The theme uses a white canvas, dark neutral text, restrained green accents, serif article text, and a centered reading column. Teaching-callout colors extend the semantic tokens. Only a light theme is provided: system dark-mode preferences do not change the page, and there is no theme switcher. Add only needed components with `bunx shadcn@latest add <component>`, inspect generated imports and dependencies, then run `bun run lint:fix` and verification. The Bun frontend build scans package source only; it does not scan a consuming course's Markdown or require a consumer Tailwind configuration.
-
-Development follows TDD:
-
-1. Write and run a focused failing test.
-2. Implement the smallest passing change.
-3. Refactor while keeping tests green.
-4. Run relevant tests and type checks; use Playwright for browser behavior.
-5. Commit the complete change and its tests as one atomic commit.
-
-Use English Conventional Commit messages. Keep unrelated cleanup and features separate, and do not commit intermediate failing states. All repository file content is written in English except `PLAN.md`, which is written in Chinese; existing visual reference assets are preserved.
 
 ## 教学工作流
 
