@@ -2,7 +2,7 @@
  * Validation for restricted teaching directives.
  *
  * Only a fixed set of container directives is supported. Each directive has an
- * attribute allowlist, and structural rules keep tabs and columns well formed.
+ * attribute allowlist, and structural rules keep tab groups well formed.
  * Violations become source-located error diagnostics; this module never mutates
  * the tree or renders anything.
  */
@@ -29,8 +29,6 @@ interface DirectiveRule {
   forbiddenAncestors?: readonly string[];
   /** Direct block children must all be container directives with these names. */
   children?: readonly string[];
-  /** The directive must contain exactly this many named children. */
-  exactChildren?: { name: string; count: number };
   /** The directive must contain at least this many named children. */
   minimumChildren?: { name: string; count: number };
 }
@@ -54,15 +52,6 @@ const DIRECTIVE_RULES: Readonly<Record<string, DirectiveRule>> = {
   tab: {
     attributes: { title: { required: true, nonEmpty: true } },
     parent: "tabs",
-  },
-  columns: {
-    attributes: {},
-    children: ["column"],
-    exactChildren: { name: "column", count: 2 },
-  },
-  column: {
-    attributes: {},
-    parent: "columns",
   },
 };
 
@@ -154,19 +143,6 @@ function validateChildren(
           path,
           node,
           `Directive ${quoted(node.name)} may only contain ${names} children.`,
-        ),
-      );
-    }
-  }
-
-  if (rule.exactChildren) {
-    const { name, count } = rule.exactChildren;
-    if (countChildren(children, name) !== count) {
-      diagnostics.push(
-        toDiagnostic(
-          path,
-          node,
-          `Directive ${quoted(node.name)} requires exactly ${count} ${quoted(name)} children.`,
         ),
       );
     }

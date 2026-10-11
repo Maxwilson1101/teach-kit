@@ -122,24 +122,9 @@ describe("validateDirectives", () => {
     ]);
   });
 
-  test("requires tab inside tabs and column inside columns", () => {
-    const source = [
-      ':::tab{title="Loose"}',
-      "",
-      "Body.",
-      "",
-      ":::",
-      "",
-      ":::column",
-      "",
-      "Body.",
-      "",
-      ":::",
-    ].join("\n");
-
-    expect(validate(source)).toMatchObject([
+  test("requires a tab inside tabs", () => {
+    expect(validate(':::tab{title="Loose"}\n\nBody.\n\n:::')).toMatchObject([
       { severity: "error", line: 1, message: 'Directive "tab" must be inside "tabs".' },
-      { severity: "error", message: 'Directive "column" must be inside "columns".' },
     ]);
   });
 
@@ -169,27 +154,19 @@ describe("validateDirectives", () => {
     ]);
   });
 
-  test("requires exactly two columns", () => {
-    const one = "::::columns\n\n:::column\n\nOnly.\n\n:::\n\n::::";
-
-    expect(validate(one)).toMatchObject([
-      { severity: "error", message: 'Directive "columns" requires exactly 2 "column" children.' },
-    ]);
-  });
-
-  test("rejects non-column content inside columns", () => {
+  test("rejects loose prose inside a tab group", () => {
     const source = [
-      "::::columns",
+      "::::tabs",
       "",
       "Loose paragraph.",
       "",
-      ":::column",
+      ':::tab{title="First"}',
       "",
       "Left.",
       "",
       ":::",
       "",
-      ":::column",
+      ':::tab{title="Second"}',
       "",
       "Right.",
       "",
@@ -199,7 +176,7 @@ describe("validateDirectives", () => {
     ].join("\n");
 
     expect(validate(source)).toMatchObject([
-      { severity: "error", message: 'Directive "columns" may only contain "column" children.' },
+      { severity: "error", message: 'Directive "tabs" may only contain "tab" children.' },
     ]);
   });
 
@@ -225,19 +202,10 @@ describe("validateDirectives", () => {
       "",
       ':::::tab{title="Two"}',
       "",
-      "::::columns",
+      '::::details{title="An explanation"}',
       "",
-      ":::column",
-      "",
-      "Left.",
-      "",
-      ":::",
-      "",
-      ":::column",
-      "",
-      "Right.",
-      "",
-      ":::",
+      "1. First step.",
+      "2. Second step.",
       "",
       "::::",
       "",

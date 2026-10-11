@@ -148,15 +148,15 @@ describe("parseMarkdown", () => {
 
   test("nests directives with a longer colon fence on the outer container", () => {
     const source = [
-      "::::columns",
+      "::::tabs",
       "",
-      ":::column",
+      ':::tab{title="First"}',
       "",
       "Left side.",
       "",
       ":::",
       "",
-      ":::column",
+      ':::tab{title="Second"}',
       "",
       "Right side.",
       "",
@@ -170,12 +170,12 @@ describe("parseMarkdown", () => {
 
     expect(outer?.type).toBe("containerDirective");
     if (outer?.type !== "containerDirective") throw new Error("Expected an outer container.");
-    expect(outer.name).toBe("columns");
+    expect(outer.name).toBe("tabs");
     expect(
       outer.children
         .filter((child) => child.type === "containerDirective")
         .map((child) => child.name),
-    ).toEqual(["column", "column"]);
+    ).toEqual(["tab", "tab"]);
     expect(document.diagnostics).toEqual([]);
   });
 

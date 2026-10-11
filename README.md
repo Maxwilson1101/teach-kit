@@ -15,7 +15,7 @@ See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENT
 - Markdown files in `lessons/` provide lesson bodies; `assets/` holds course resources.
 - A dedicated course index shows both generated and planned lessons.
 - Lesson pages include a compact section rail with hover/focus previews, anchor navigation, and active-section tracking.
-- Restricted Markdown directives provide callouts, disclosures, tabs, and two-column layouts.
+- Restricted Markdown directives provide callouts, disclosures, and tabs.
 - Standard Markdown, syntax-highlighted code, math, and Mermaid diagrams support teaching content.
 - A local preview server provides the reading experience; Playwright verifies browser behavior and layout.
 
@@ -96,7 +96,6 @@ Supported directives:
 | `callout` | Definitions, conclusions, tips, and risks | Kinds: `note`, `tip`, `warning` |
 | `details` | Answers, proofs, and supplementary explanations | Required title; collapsed by default |
 | `tabs` / `tab` | Alternative perspectives or implementations | Required tab titles; no nested tab groups |
-| `columns` / `column` | Side-by-side comparisons | Exactly two columns; stacked on narrow screens |
 
 Tabs use `@radix-ui/react-tabs` for keyboard focus, automatic activation, and ARIA relationships while retaining package-owned styling. Inactive panels stay mounted and hidden, so switching tabs preserves nested disclosure state. The selected panel is keyboard-focusable. Markdown validation, rather than the UI primitive, enforces the prohibition on nested tab groups.
 
