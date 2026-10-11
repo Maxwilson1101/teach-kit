@@ -139,6 +139,33 @@
     opacity: 1;
     width: 20px;
   }
+  .section-preview {
+    z-index: 30;
+    width: min(320px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--card-foreground);
+    box-shadow: 0 6px 24px rgb(0 0 0 / 8%);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .section-preview-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+  }
+  .section-preview-title {
+    font-weight: 600;
+  }
+  .section-preview-summary {
+    margin-top: 8px;
+    color: var(--muted-foreground);
+  }
   .lesson-prose {
     @apply font-serif text-lg leading-[1.75] sm:text-xl;
     min-width: 0;
