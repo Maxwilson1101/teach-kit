@@ -3,20 +3,61 @@ import { expect, test } from "@playwright/test";
 import { openNavigationLesson } from "../helpers/navigation-page";
 
 const titles = [
-  "Transport is not verification",
-  "Follow one message",
-  "Two different questions",
-  "Authenticity is not authorization",
-  "Check your understanding",
-  "Further reading",
+  "传输不等于验证",
+  "跟随一条消息",
+  "两个不同的问题",
+  "真实性不等于授权",
+  "检查理解",
+  "延伸阅读",
 ] as const;
+
+test("animates nearby tick lengths around the hovered or focused section", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
+  await page.goto("/lessons/message-lifecycle#跟随一条消息");
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
+  const links = navigation.getByRole("link");
+  await expect(navigation.locator('[aria-current="location"]')).toHaveAccessibleName(titles[1]);
+  const ticks = navigation.locator(".section-tick");
+  const bounds = await ticks.evaluateAll((elements) =>
+    elements.map((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
+  );
+  expect(bounds).toHaveLength(titles.length);
+  for (const [index, tick] of bounds.entries()) {
+    expect(tick.width).toBe(8);
+    expect(tick.height).toBe(2);
+    if (index > 0) expect(tick.y - (bounds[index - 1]?.y ?? 0)).toBe(13);
+  }
+  const railBounds = await navigation.boundingBox();
+  await page.screenshot({ path: testInfo.outputPath("compact-section-rail.png") });
+  await links.nth(3).hover();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await expect.poll(async () => (await ticks.nth(3).boundingBox())?.width).toBeGreaterThan(24);
+  await expect.poll(async () => (await ticks.nth(2).boundingBox())?.width).toBeGreaterThan(18);
+  await expect.poll(async () => (await ticks.nth(1).boundingBox())?.width).toBeGreaterThan(8);
+  expect(await navigation.boundingBox()).toEqual(railBounds);
+  await page.screenshot({ path: testInfo.outputPath("compact-section-hover.png") });
+  await page.keyboard.press("Escape");
+  await page.mouse.move(900, 100);
+  await links.nth(4).focus();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await expect.poll(async () => (await ticks.nth(4).boundingBox())?.width).toBeGreaterThan(24);
+  await expect.poll(async () => (await ticks.nth(3).boundingBox())?.width).toBeGreaterThan(18);
+  expect(await navigation.boundingBox()).toEqual(railBounds);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#检查理解")).toBeFocused();
+});
 
 test("offers ordered desktop anchor links and focuses headings on pointer and keyboard jumps", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
   await page.goto("/lessons/message-lifecycle");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   await expect(navigation).toBeVisible();
   const links = navigation.getByRole("link");
   await expect(links).toHaveCount(titles.length);
@@ -24,12 +65,14 @@ test("offers ordered desktop anchor links and focuses headings on pointer and ke
     await expect(links.nth(index)).toHaveAccessibleName(title);
   }
   await links.nth(1).click();
-  await expect(page).toHaveURL(/#follow-one-message$/);
-  await expect(page.locator("#follow-one-message")).toBeFocused();
+  await expect(page).toHaveURL(/#%E8%B7%9F%E9%9A%8F%E4%B8%80%E6%9D%A1%E6%B6%88%E6%81%AF$/);
+  await expect(page.locator("#跟随一条消息")).toBeFocused();
   await links.nth(3).focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#authenticity-is-not-authorization$/);
-  await expect(page.locator("#authenticity-is-not-authorization")).toBeFocused();
+  await expect(page).toHaveURL(
+    /#%E7%9C%9F%E5%AE%9E%E6%80%A7%E4%B8%8D%E7%AD%89%E4%BA%8E%E6%8E%88%E6%9D%83$/,
+  );
+  await expect(page.locator("#真实性不等于授权")).toBeFocused();
   await links.first().focus();
   await page.keyboard.press("Tab");
   await expect(links.nth(1)).toBeFocused();
@@ -42,12 +85,10 @@ test("omits navigation without sections and labels a single empty heading", asyn
   test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
   await openNavigationLesson(page, "An introduction without any headings.");
   await expect(page.getByRole("article")).toContainText("An introduction");
-  await expect(
-    page.getByRole("navigation", { name: "Section navigation", exact: true }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "章节导航", exact: true })).toHaveCount(0);
   await page.unroute("**/api/lessons/message-lifecycle");
   await openNavigationLesson(page, "##\n\nBody.");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   await expect(navigation.getByRole("link")).toHaveCount(1);
   await expect(navigation.getByRole("link")).toHaveAccessibleName("Section 1");
   await navigation.getByRole("link").click();
@@ -63,9 +104,7 @@ test("keeps hover previews open across the pointer gap and dismisses without reo
     page,
     "## First\n\nA **plain** summary.\n\n## Second\n\nAnother summary.",
   );
-  const links = page
-    .getByRole("navigation", { name: "Section navigation", exact: true })
-    .getByRole("link");
+  const links = page.getByRole("navigation", { name: "章节导航", exact: true }).getByRole("link");
   const preview = page.getByRole("tooltip");
   await links.first().hover();
   await expect(preview).toContainText("First");
@@ -111,9 +150,7 @@ test("bounds long previews and keeps first and last links reachable in a short v
     ...Array.from({ length: 40 }, (_, index) => `## Section ${index + 1}`),
   ].join("\n\n");
   await openNavigationLesson(page, source);
-  const links = page
-    .getByRole("navigation", { name: "Section navigation", exact: true })
-    .getByRole("link");
+  const links = page.getByRole("navigation", { name: "章节导航", exact: true }).getByRole("link");
   await links.first().focus();
   const preview = page.getByRole("tooltip");
   await expect(preview).toBeVisible();
@@ -142,19 +179,17 @@ test("tracks scrolling, introduction and a short last section without writing UR
 }, testInfo) => {
   test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
   await page.goto("/lessons/message-lifecycle");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   const current = navigation.locator('[aria-current="location"]');
   await expect(navigation).toBeVisible();
   await expect(current).toHaveCount(0);
   const historyLength = await page.evaluate(() => history.length);
-  await page
-    .locator("#authenticity-is-not-authorization")
-    .evaluate((heading) => heading.scrollIntoView());
+  await page.locator("#真实性不等于授权").evaluate((heading) => heading.scrollIntoView());
   await expect(current).toHaveAccessibleName(titles[3] ?? "");
   await navigation.getByRole("link", { name: titles[1], exact: true }).hover();
   await expect(page.getByRole("tooltip")).toBeVisible();
   await expect(current).toHaveAccessibleName(titles[3] ?? "");
-  await page.locator("#follow-one-message").evaluate((heading) => heading.scrollIntoView());
+  await page.locator("#跟随一条消息").evaluate((heading) => heading.scrollIntoView());
   await expect(current).toHaveAccessibleName(titles[1] ?? "");
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect(current).toHaveAccessibleName(titles[5] ?? "");
@@ -170,17 +205,19 @@ test("restores active deep links through history and tolerates missing fragments
   test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/lessons/message-lifecycle#follow-one-message");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  await page.goto("/lessons/message-lifecycle#跟随一条消息");
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   const current = navigation.locator('[aria-current="location"]');
   await expect(current).toHaveAccessibleName(titles[1] ?? "");
   await navigation.getByRole("link", { name: titles[3], exact: true }).click();
   await expect(current).toHaveAccessibleName(titles[3] ?? "");
   await page.goBack();
-  await expect(page).toHaveURL(/#follow-one-message$/);
+  await expect(page).toHaveURL(/#%E8%B7%9F%E9%9A%8F%E4%B8%80%E6%9D%A1%E6%B6%88%E6%81%AF$/);
   await expect(current).toHaveAccessibleName(titles[1] ?? "");
   await page.goForward();
-  await expect(page).toHaveURL(/#authenticity-is-not-authorization$/);
+  await expect(page).toHaveURL(
+    /#%E7%9C%9F%E5%AE%9E%E6%80%A7%E4%B8%8D%E7%AD%89%E4%BA%8E%E6%8E%88%E6%9D%83$/,
+  );
   await expect(current).toHaveAccessibleName(titles[3] ?? "");
   await page.goto("/");
   await page.goto("/lessons/message-lifecycle#missing-heading");
@@ -190,9 +227,9 @@ test("restores active deep links through history and tolerates missing fragments
   await page.goto("/lessons/message-lifecycle#%zz");
   await expect(navigation).toBeVisible();
   await expect(current).toHaveCount(0);
-  await page.getByRole("link", { name: "Course overview", exact: true }).click();
+  await page.getByRole("link", { name: "课程概览", exact: true }).click();
   await expect(navigation).toHaveCount(0);
-  await page.getByRole("link", { name: /Protocol model and message lifecycle/ }).click();
+  await page.getByRole("link", { name: /协议模型与消息生命周期/ }).click();
   await expect(navigation).toBeVisible();
   await expect(current).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -207,7 +244,7 @@ test("recalculates the active section after disclosure layout changes without sc
   await openNavigationLesson(page, source);
   // Isolate position changes from the browser's automatic scroll anchoring.
   await page.addStyleTag({ content: "html { overflow-anchor: none; }" });
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   const current = navigation.locator('[aria-current="location"]');
   await page.locator("#second").evaluate((heading) => heading.scrollIntoView());
   await expect(current).toHaveAccessibleName("Second");
@@ -230,8 +267,8 @@ test("uses a non-modal narrow outline by touch and keyboard, then focuses the se
     if (message.type() === "error") errors.push(message.text());
   });
   await page.goto("/lessons/message-lifecycle");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
-  const button = navigation.getByRole("button", { name: "On this page" });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
+  const button = navigation.getByRole("button", { name: "本页内容" });
   await expect(button).toHaveAttribute("aria-expanded", "false");
   const outlineId = await button.getAttribute("aria-controls");
   expect(outlineId).toBeTruthy();
@@ -246,9 +283,9 @@ test("uses a non-modal narrow outline by touch and keyboard, then focuses the se
   const target = navigation.getByRole("link", { name: titles[1], exact: true });
   if (testInfo.project.name === "mobile-chromium") await target.tap();
   else await target.click();
-  await expect(page).toHaveURL(/#follow-one-message$/);
-  await expect(page.locator("#follow-one-message")).toBeFocused();
-  await expect(page.locator("#follow-one-message")).toBeInViewport();
+  await expect(page).toHaveURL(/#%E8%B7%9F%E9%9A%8F%E4%B8%80%E6%9D%A1%E6%B6%88%E6%81%AF$/);
+  await expect(page.locator("#跟随一条消息")).toBeFocused();
+  await expect(page.locator("#跟随一条消息")).toBeInViewport();
   await expect(button).toHaveAttribute("aria-expanded", "false");
   await button.focus();
   await page.keyboard.press("Enter");
@@ -283,8 +320,8 @@ test("keeps long outlines usable at 320px and renders no toggle without sections
       ...Array.from({ length: 40 }, (_, index) => `## Section ${index + 1}`),
     ].join("\n\n"),
   );
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
-  const button = navigation.getByRole("button", { name: "On this page" });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
+  const button = navigation.getByRole("button", { name: "本页内容" });
   await button.click();
   await expect(navigation.getByRole("link").first()).toHaveText(longTitle);
   await navigation.getByRole("link").last().focus();
@@ -300,7 +337,7 @@ test("keeps long outlines usable at 320px and renders no toggle without sections
   await openNavigationLesson(page, "No sections here.");
   await expect(page.getByRole("article")).toContainText("No sections here.");
   await expect(navigation).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "On this page" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "本页内容" })).toHaveCount(0);
 });
 
 test("switches at the gutter breakpoint without retaining previews or expanded outline state", async ({
@@ -308,11 +345,11 @@ test("switches at the gutter breakpoint without retaining previews or expanded o
 }, testInfo) => {
   await page.setViewportSize({ width: 1000, height: 720 });
   await page.goto("/lessons/message-lifecycle");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   await navigation.getByRole("link").first().focus();
   await expect(page.getByRole("tooltip")).toBeVisible();
   await page.setViewportSize({ width: 999, height: 720 });
-  const button = navigation.getByRole("button", { name: "On this page" });
+  const button = navigation.getByRole("button", { name: "本页内容" });
   await expect(button).toBeVisible();
   await expect(page.getByRole("tooltip")).toHaveCount(0);
   await button.click();
@@ -323,7 +360,7 @@ test("switches at the gutter breakpoint without retaining previews or expanded o
   await page.screenshot({ path: testInfo.outputPath("gutter-breakpoint.png") });
   await page.setViewportSize({ width: 999, height: 720 });
   await expect(button).toHaveAttribute("aria-expanded", "false");
-  await page.getByRole("link", { name: /Next lesson.*Mailbox/ }).click();
+  await page.getByRole("link", { name: /下一课.*Mailbox/ }).click();
   await expect(button).toHaveAttribute("aria-expanded", "false");
   await button.click();
   await expect(navigation.getByRole("link")).toHaveCount(3);
@@ -333,9 +370,9 @@ test("keeps heading navigation distinct from the skip-to-content target", async 
   page,
 }, testInfo) => {
   await openNavigationLesson(page, "## Main content\n\nBody.");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
   if (testInfo.project.name === "mobile-chromium") {
-    await navigation.getByRole("button", { name: "On this page" }).click();
+    await navigation.getByRole("button", { name: "本页内容" }).click();
   }
   await navigation.getByRole("link", { name: "Main content", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Main content", exact: true })).toBeFocused();
@@ -350,30 +387,28 @@ test("tracks narrow reading state and restores deep links without expanding the 
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 851 });
-  await page.goto("/lessons/message-lifecycle#follow-one-message");
-  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
-  const button = navigation.getByRole("button", { name: "On this page" });
+  await page.goto("/lessons/message-lifecycle#跟随一条消息");
+  const navigation = page.getByRole("navigation", { name: "章节导航", exact: true });
+  const button = navigation.getByRole("button", { name: "本页内容" });
   const current = navigation.locator('[aria-current="location"]');
   await expect(button).toHaveAttribute("aria-expanded", "false");
-  await expect(current).toHaveAttribute("href", "#follow-one-message");
+  await expect(current).toHaveAttribute("href", "#跟随一条消息");
   const historyLength = await page.evaluate(() => history.length);
-  await page
-    .locator("#authenticity-is-not-authorization")
-    .evaluate((heading) => heading.scrollIntoView());
-  await expect(current).toHaveAttribute("href", "#authenticity-is-not-authorization");
-  await expect(page).toHaveURL(/#follow-one-message$/);
+  await page.locator("#真实性不等于授权").evaluate((heading) => heading.scrollIntoView());
+  await expect(current).toHaveAttribute("href", "#真实性不等于授权");
+  await expect(page).toHaveURL(/#%E8%B7%9F%E9%9A%8F%E4%B8%80%E6%9D%A1%E6%B6%88%E6%81%AF$/);
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   await button.click();
   await navigation.getByRole("link", { name: titles[3], exact: true }).click();
-  await expect(page.locator("#authenticity-is-not-authorization")).toBeFocused();
+  await expect(page.locator("#真实性不等于授权")).toBeFocused();
   await expect(button).toHaveAttribute("aria-expanded", "false");
   await page.goBack();
-  await expect(page).toHaveURL(/#follow-one-message$/);
-  await expect(current).toHaveAttribute("href", "#follow-one-message");
+  await expect(page).toHaveURL(/#%E8%B7%9F%E9%9A%8F%E4%B8%80%E6%9D%A1%E6%B6%88%E6%81%AF$/);
+  await expect(current).toHaveAttribute("href", "#跟随一条消息");
   await page.goForward();
-  await expect(current).toHaveAttribute("href", "#authenticity-is-not-authorization");
+  await expect(current).toHaveAttribute("href", "#真实性不等于授权");
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect(current).toHaveAttribute("href", "#further-reading");
+  await expect(current).toHaveAttribute("href", "#延伸阅读");
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(current).toHaveCount(0);
 });

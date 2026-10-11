@@ -42,12 +42,18 @@ function SectionLink({
   active,
   openId,
   setOpenId,
+  waveDistance,
+  setHoveredIndex,
+  setFocusedIndex,
 }: {
   section: MarkdownSection;
   index: number;
   active: boolean;
   openId: string | null;
   setOpenId: Dispatch<SetStateAction<string | null>>;
+  waveDistance: number | null;
+  setHoveredIndex: Dispatch<SetStateAction<number | null>>;
+  setFocusedIndex: Dispatch<SetStateAction<number | null>>;
 }) {
   const open = openId === section.id;
   const { refs, floatingStyles, context } = useFloating({
@@ -85,10 +91,17 @@ function SectionLink({
         href={`#${section.id}`}
         aria-current={active ? "location" : undefined}
         {...getReferenceProps({
+          onPointerEnter: () => setHoveredIndex(index),
+          onFocus: () => setFocusedIndex(index),
+          onBlur: () => setFocusedIndex(null),
           onClick: (event: MouseEvent<HTMLAnchorElement>) => focusHeading(event, section.id),
         })}
       >
-        <span aria-hidden="true" className="section-tick" />
+        <span
+          aria-hidden="true"
+          className="section-tick"
+          data-hover-distance={waveDistance ?? undefined}
+        />
         <span className="sr-only">{title}</span>
       </a>
       {open && (
@@ -97,7 +110,10 @@ function SectionLink({
             ref={refs.setFloating}
             style={floatingStyles}
             className="section-preview"
-            {...getFloatingProps()}
+            {...getFloatingProps({
+              onPointerEnter: () => setHoveredIndex(index),
+              onPointerLeave: () => setHoveredIndex(null),
+            })}
           >
             <p className="section-preview-title">{title}</p>
             {section.summary && <p className="section-preview-summary">{section.summary}</p>}
@@ -110,11 +126,14 @@ function SectionLink({
 
 export function SectionNavigation({ sections }: { sections: readonly MarkdownSection[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [wide, setWide] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const outlineId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const activeId = useActiveSection(sections);
+  const waveIndex = hoveredIndex ?? focusedIndex;
   useEffect(() => {
     // 760px reading column plus a gutter on each side, without shifting the article.
     const media = window.matchMedia("(min-width: 1000px)");
@@ -135,7 +154,7 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
   if (!sections.length) return null;
   return (
     <nav
-      aria-label="Section navigation"
+      aria-label="章节导航"
       className={wide ? "section-rail" : "section-outline"}
       onKeyDown={(event) => {
         if (event.key === "Escape" && !wide && expanded) {
@@ -144,6 +163,7 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
           button.current?.focus();
         }
       }}
+      onPointerLeave={() => setHoveredIndex(null)}
     >
       {wide ? (
         <ol>
@@ -155,6 +175,9 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
               active={activeId === section.id}
               openId={openId}
               setOpenId={setOpenId}
+              waveDistance={waveIndex === null ? null : Math.abs(index - waveIndex)}
+              setHoveredIndex={setHoveredIndex}
+              setFocusedIndex={setFocusedIndex}
             />
           ))}
         </ol>
@@ -169,7 +192,7 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
             aria-controls={outlineId}
             onClick={() => setExpanded((current) => !current)}
           >
-            On this page
+            本页内容
             <span aria-hidden="true">{expanded ? "−" : "+"}</span>
           </Button>
           <ol id={outlineId} hidden={!expanded}>
