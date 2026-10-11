@@ -20,6 +20,7 @@ test("keeps introductory content and shared reference definitions throughout the
       }}
       lessonId="ready"
       page={{
+        sections: [],
         tree: {
           type: "root",
           children: [
@@ -61,7 +62,11 @@ test("keeps long metadata as escaped text and never links planned neighbors", ()
     ],
   };
   const html = renderToStaticMarkup(
-    <CourseView course={course} lessonId="ready" page={{ tree: { type: "root", children: [] } }} />,
+    <CourseView
+      course={course}
+      lessonId="ready"
+      page={{ tree: { type: "root", children: [] }, sections: [] }}
+    />,
   );
   expect(html).toContain("&lt;script&gt;");
   expect(html).toContain("Previous lesson");

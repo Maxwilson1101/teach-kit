@@ -53,6 +53,10 @@ test("serves ordered metadata, validated lesson ASTs, and entry-relative assets"
       .filter((node: { type: string }) => node.type === "heading")
       .map((node: { data: { hProperties: { id: string } } }) => node.data.hProperties.id),
   ).toEqual(["model", "model-1"]);
+  expect(lesson.sections).toEqual([
+    { id: "model", title: "Model", summary: "Local diagram" },
+    { id: "model-1", title: "Model", summary: "Conclusion." },
+  ]);
   expect(JSON.stringify(lesson.tree)).toContain("/assets/model.svg");
   for (const path of ["/", "/lessons/first", "/lessons/last"]) {
     const response = await fetch(new URL(path, server.url));
@@ -73,6 +77,53 @@ test("serves ordered metadata, validated lesson ASTs, and entry-relative assets"
   ]) {
     expect((await fetch(new URL(path, server.url))).status, path).toBe(404);
   }
+});
+
+test("shares root heading IDs and prose summaries while excluding nested headings", async () => {
+  const course = await fixture();
+  await Bun.write(
+    join(course.directory, "lessons/first.md"),
+    [
+      "Introduction.",
+      "",
+      "> ## Quoted heading",
+      "",
+      "## Overview",
+      "",
+      ':::details{title="Extra"}',
+      "## Hidden heading",
+      "Hidden summary.",
+      ":::",
+      "",
+      "```ts",
+      "const value = 1;",
+      "```",
+      "",
+      "Real **summary**.",
+      "",
+      "## Overview",
+      "",
+      "##",
+    ].join("\n"),
+  );
+  await Bun.write(join(course.directory, "lessons/last.md"), "Introduction without sections.");
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const lesson = await (await fetch(new URL("/api/lessons/first", server.url))).json();
+  expect(lesson.sections).toEqual([
+    { id: "overview", title: "Overview", summary: "Real summary." },
+    { id: "overview-1", title: "Overview", summary: "" },
+    { id: "section", title: "", summary: "" },
+  ]);
+  expect(
+    lesson.tree.children
+      .filter(
+        (node: { type: string; depth?: number }) => node.type === "heading" && node.depth === 2,
+      )
+      .map((node: { data: { hProperties: { id: string } } }) => node.data.hProperties.id),
+  ).toEqual(lesson.sections.map((section: { id: string }) => section.id));
+  const last = await (await fetch(new URL("/api/lessons/last", server.url))).json();
+  expect(last.sections).toEqual([]);
 });
 
 test("serves referenced images outside assets without exposing other course files", async () => {

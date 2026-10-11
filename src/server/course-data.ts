@@ -66,7 +66,7 @@ export async function readCoursePages(entry: string) {
         });
       }
     });
-    pages.set(lesson.id, { tree: document.tree });
+    pages.set(lesson.id, { tree: document.tree, sections });
   }
   const overview: CourseOverview = {
     title: loaded.title,

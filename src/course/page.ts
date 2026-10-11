@@ -1,4 +1,5 @@
 import { type Root } from "mdast";
+import { type MarkdownSection } from "../markdown/sections";
 import { type CourseConfig, type LessonConfig } from "./config";
 import { type LessonStatus } from "./content";
 
@@ -13,4 +14,6 @@ export interface CourseOverview extends Omit<CourseConfig, "lessons"> {
 
 export interface LessonPage {
   tree: Root;
+  /** Ordered navigation metadata from the same AST that supplies heading IDs. */
+  sections: MarkdownSection[];
 }
