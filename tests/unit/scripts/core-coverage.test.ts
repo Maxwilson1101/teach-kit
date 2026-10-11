@@ -52,4 +52,11 @@ describe("evaluateCoreCoverage", () => {
       { module: "src/course/config.ts", lineCoverage: 1 },
     ]);
   });
+
+  test("matches Windows-style relative report paths", () => {
+    const windows = report.replace("SF:src/course/config.ts", "SF:src\\course\\config.ts");
+    expect(evaluateCoreCoverage(windows, ["src/course/config.ts"])).toEqual([
+      { module: "src/course/config.ts", lineCoverage: 1 },
+    ]);
+  });
 });

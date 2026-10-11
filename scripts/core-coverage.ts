@@ -73,9 +73,8 @@ export function evaluateCoreCoverage(
 
   return modules.map((module) => {
     const match = records.find((record) => {
-      if (record.module === module) return true;
       const normalized = record.module.replaceAll("\\", "/");
-      return normalized.endsWith(`/${module}`);
+      return normalized === module || normalized.endsWith(`/${module}`);
     });
     return { module, lineCoverage: match?.lineCoverage ?? 0 };
   });
