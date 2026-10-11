@@ -14,7 +14,6 @@ import { type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { isCalloutKind } from "../markdown/callout-kind";
 import { Callout } from "./components/callout";
-import { Column, Columns } from "./components/columns";
 import { Details } from "./components/details";
 import { type TabItem, Tabs } from "./components/tabs";
 
@@ -52,15 +51,6 @@ function renderDirective(
         tabs.push({ id, title, content: renderChildren(child) });
       }
       return tabs.length ? <Tabs tabs={tabs} /> : null;
-    }
-    case "columns": {
-      if (node.children.length !== 2) return null;
-      const columns: ReactNode[] = [];
-      for (const child of node.children) {
-        if (child.type !== "containerDirective" || child.name !== "column") return null;
-        columns.push(<Column key={columns.length}>{renderChildren(child)}</Column>);
-      }
-      return <Columns>{columns}</Columns>;
     }
     default:
       return null;

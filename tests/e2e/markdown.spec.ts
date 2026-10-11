@@ -31,12 +31,9 @@ test("renders Markdown and nested teaching components without errors or overflow
   const right = await page.getByText("Right comparison.").boundingBox();
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
-  if (!left || !right) throw new Error("Comparison columns have no layout boxes.");
-  if (testInfo.project.name === "mobile-chromium") {
-    expect(right.y).toBeGreaterThan(left.y);
-  } else {
-    expect(right.x).toBeGreaterThan(left.x);
-  }
+  if (!left || !right) throw new Error("Comparison paragraphs have no layout boxes.");
+  expect(right.y).toBeGreaterThan(left.y + left.height);
+  expect(Math.abs(right.x - left.x)).toBeLessThan(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

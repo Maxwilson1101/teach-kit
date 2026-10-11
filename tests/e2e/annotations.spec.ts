@@ -236,3 +236,22 @@ test("captures the same lesson in collapsed, expanded, and selected states for b
   await group.screenshot({ path: testInfo.outputPath("tabs-keyboard-focus.png") });
   await expectNoPageOverflow(page);
 });
+
+test("keeps comparison concepts in sequential full-width article prose", async ({ page }) => {
+  await page.goto("/lessons/message-lifecycle");
+  const article = page.getByRole("article");
+  await expect(article).toBeVisible();
+  await expect(article.locator("[data-columns], [data-column]")).toHaveCount(0);
+  const headings = article.locator(":scope > h3");
+  await expect(headings).toHaveCount(2);
+  const paragraphs = article.locator(":scope > h3 + p");
+  await expect(paragraphs).toHaveCount(2);
+  const first = await bounds(paragraphs.first());
+  const second = await bounds(paragraphs.nth(1));
+  const articleBox = await bounds(article);
+  expect(second.y).toBeGreaterThan(first.y + first.height);
+  expect(Math.abs(second.x - first.x)).toBeLessThan(1);
+  expect(first.width).toBeGreaterThanOrEqual(articleBox.width * 0.95);
+  expect(second.width).toBeGreaterThanOrEqual(articleBox.width * 0.95);
+  await expectNoPageOverflow(page);
+});
