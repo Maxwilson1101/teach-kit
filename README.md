@@ -4,7 +4,7 @@ Teach Kit 是一个 Bun 软件包，可以把 Markdown 课程渲染为本地预�
 
 ## Status
 
-Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, hover/focus previews, active-section tracking, and a narrow-screen outline are implemented. Syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
+Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, hover/focus previews, active-section tracking, and a narrow-screen outline are implemented. Syntax highlighting, KaTeX-rendered math, and server-rendered Mermaid diagrams are also implemented. The package name is provisional; it is not published yet.
 
 ## MVP Scope
 
@@ -113,7 +113,15 @@ On desktop, the left section rail provides native anchor links. Hover or focus a
 
 Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
 
-The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Standard Markdown rendering reuses `mdast-util-to-hast` and `hast-util-to-jsx-runtime`, consuming the existing mdast tree without parsing the source again. A small adapter maps teaching directives to React components; raw HTML, footnotes, and unsupported nodes remain disabled. Code text is preserved without adding a trailing newline. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
+The internal Markdown modules separate parsing, section metadata, resource validation, math validation, Mermaid rendering, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Standard Markdown rendering reuses `mdast-util-to-hast` and `hast-util-to-jsx-runtime`, consuming the existing mdast tree without parsing the source again. A small adapter maps teaching directives to React components; raw HTML, footnotes, and unsupported nodes remain disabled. Code text is preserved without adding a trailing newline. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
+
+### 公式、代码与图表
+
+行内公式使用 `$...$`，块级公式使用 `$$...$$`，两者都由 KaTeX 渲染。`check` 与预览服务器在加载内容时用 KaTeX 校验每个表达式，非法 LaTeX 会产生带文件位置的 error 诊断，因此页面不会渲染未校验的公式。块级公式不进入章节摘要；行内公式作为正文文本参与摘要。
+
+围栏代码块按语言进行语法高亮，配色沿用当前阅读主题。未知或缺失的语言保持纯文本且不报错，代码文本按原样保留，不追加尾随换行。指令容器内的代码同样会被高亮。
+
+`mermaid` 围栏在加载内容时由服务端渲染为 SVG，覆盖 beautiful-mermaid 支持的流程图、状态图、时序图、类图、ER 图和 xychart。图表类型头部缺失或语法解析失败会产生带文件位置的 error 诊断。生成的 SVG 在嵌入前会移除 `<script>`、外部 `href` 和 Google Fonts `@import`；浏览器只接收最终 SVG，不包含布局引擎或 WASM，预览也不会发起第三方网络请求。图表颜色通过主题变量跟随阅读主题。
 
 ### 安装与命令
 
@@ -169,9 +177,9 @@ tests/
 ├── fixtures/              # Valid, invalid, and boundary content
 └── helpers/               # Temporary projects and server lifecycle
 
-example/                   # A course with two available and two planned lessons
+example/                   # A course with three available and two planned lessons
 ├── index.ts
-├── lessons/               # Prose and teaching components; no code or Mermaid
+├── lessons/               # Prose, teaching components, math, code, and Mermaid
 └── assets/                # Local SVG illustration
 ```
 
