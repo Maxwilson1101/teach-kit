@@ -38,6 +38,31 @@ async function expectNoPageOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
+function relativeLuminance(color: string): number {
+  const [red, green, blue] =
+    color
+      .match(/\d+(?:\.\d+)?/g)
+      ?.slice(0, 3)
+      .map(Number) ?? [];
+  if (red === undefined || green === undefined || blue === undefined) {
+    throw new Error(`Cannot parse the color ${color}.`);
+  }
+  const channel = (value: number) => {
+    const scaled = value / 255;
+    return scaled <= 0.04045 ? scaled / 12.92 : ((scaled + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
+}
+
+/** Returns the WCAG contrast ratio between two `rgb()` colors. */
+function contrastRatio(foreground: string, background: string): number {
+  const first = relativeLuminance(foreground);
+  const second = relativeLuminance(background);
+  const lighter = Math.max(first, second);
+  const darker = Math.min(first, second);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test("keeps callouts compact with visible decorative icons and article typography", async ({
   page,
 }) => {
@@ -70,6 +95,50 @@ test("keeps callouts compact with visible decorative icons and article typograph
     }
   }
   await expectNoPageOverflow(page);
+});
+
+test("ties each callout title to its kind theme color with AA contrast and a 16px label size", async ({
+  page,
+}) => {
+  await page.goto("/lessons/message-lifecycle");
+  const article = page.getByRole("article");
+  for (const kind of ["note", "tip", "warning"]) {
+    const callout = article.locator(`[data-callout="${kind}"]`).first();
+    const heading = callout.locator(":scope > :first-child");
+    const iconColor = await heading.locator("svg").evaluate((el) => getComputedStyle(el).color);
+    const headingStyle = await heading.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.color,
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
+        fontWeight: style.fontWeight,
+      };
+    });
+    expect(headingStyle.color).toBe(iconColor);
+    expect(headingStyle.fontSize).toBe("16px");
+    expect(Number.parseFloat(headingStyle.lineHeight)).toBe(24);
+    expect(Number.parseInt(headingStyle.fontWeight, 10)).toBeGreaterThanOrEqual(600);
+    const background = await callout.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(contrastRatio(headingStyle.color, background)).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
+test("matches the disclosure question to the serif article typography", async ({ page }) => {
+  await page.goto("/lessons/message-lifecycle");
+  const article = page.getByRole("article");
+  const summary = article.locator("details > summary").first();
+  const articleStyle = await article.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { family: style.fontFamily, size: style.fontSize, lineHeight: style.lineHeight };
+  });
+  const summaryStyle = await summary.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { family: style.fontFamily, size: style.fontSize, lineHeight: style.lineHeight };
+  });
+  expect(summaryStyle.family).toBe(articleStyle.family);
+  expect(summaryStyle.size).toBe(articleStyle.size);
+  expect(summaryStyle.lineHeight).toBe(articleStyle.lineHeight);
 });
 
 test("reveals explanations by pointer, touch, and keyboard without enclosing borders", async ({
