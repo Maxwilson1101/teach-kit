@@ -1,8 +1,13 @@
 @import "tailwindcss" source(none);
 @source "../";
+
+/* Keep `dark:` utilities inert: the reading theme is intentionally light
+   regardless of the system preference, so the shadcn component variants must
+   not activate from `prefers-color-scheme`. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
+  --font-sans: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif CJK SC", "SimSun", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -22,8 +27,10 @@
   --color-ring: var(--ring);
   --color-tip: var(--tip);
   --color-tip-border: var(--tip-border);
+  --color-tip-foreground: var(--tip-foreground);
   --color-warning: var(--warning);
   --color-warning-border: var(--warning-border);
+  --color-warning-foreground: var(--warning-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -59,11 +66,10 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply m-0 bg-background text-foreground;
-    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    @apply m-0 bg-background text-foreground font-sans;
     line-height: 1.6;
     overflow-wrap: anywhere;
   }
@@ -208,10 +214,7 @@
     line-height: 1.5;
   }
   .section-preview-summary {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
-    overflow: hidden;
+    @apply line-clamp-4;
   }
   .section-preview-title {
     margin: 0;

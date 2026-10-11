@@ -141,6 +141,16 @@ test("matches the disclosure question to the serif article typography", async ({
   expect(summaryStyle.lineHeight).toBe(articleStyle.lineHeight);
 });
 
+test("uses the shared sans stack for annotation headings and the page body", async ({ page }) => {
+  await page.goto("/lessons/message-lifecycle");
+  const bodyFamily = await page
+    .locator("body")
+    .evaluate((element) => getComputedStyle(element).fontFamily);
+  const heading = page.getByRole("article").locator("[data-callout] .callout-heading").first();
+  const headingFamily = await heading.evaluate((element) => getComputedStyle(element).fontFamily);
+  expect(headingFamily).toBe(bodyFamily);
+});
+
 test("reveals explanations by pointer, touch, and keyboard without enclosing borders", async ({
   page,
   isMobile,
