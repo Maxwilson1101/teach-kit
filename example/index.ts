@@ -16,6 +16,11 @@ export default defineCourse({
       description: "理解消息的发送、接收，以及同一消息为何不能执行两次。",
     },
     {
+      id: "rendering",
+      title: "渲染示例：公式、代码与图表",
+      description: "检查公式、代码高亮与 Mermaid 图表在当前主题下的呈现。",
+    },
+    {
       id: "security",
       title: "可配置的安全机制与信任假设",
       description: "考察每个接收应用选择的消息接收规则。",

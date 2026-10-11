@@ -9,10 +9,10 @@ test("shows the ordered course plan and opens a lesson using the keyboard", asyn
   await expect(page).toHaveTitle("Hyperlane 协议学习 · Teach Kit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hyperlane 协议学习");
   const items = page.locator("main ol > li");
-  await expect(items).toHaveCount(4);
+  await expect(items).toHaveCount(5);
   await expect(items.nth(0)).toContainText("协议模型与消息生命周期");
-  await expect(items.nth(2)).toContainText("计划中");
-  await expect(items.nth(2).getByRole("link")).toHaveCount(0);
+  await expect(items.nth(3)).toContainText("计划中");
+  await expect(items.nth(3).getByRole("link")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("course.png"), fullPage: true });
   const link = page.getByRole("link", { name: /协议模型与消息生命周期/ });
   await link.focus();
@@ -54,6 +54,7 @@ test("shows the ordered course plan and opens a lesson using the keyboard", asyn
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("link", { name: /下一课.*Mailbox/ }).click();
   await expect(page.getByText("下一课", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: /下一课/ }).click();
   await expect(page.getByRole("link", { name: /下一课/ })).toHaveCount(0);
   await page.getByRole("link", { name: /上一课/ }).click();
   await page.getByRole("link", { name: "课程概览", exact: true }).click();
