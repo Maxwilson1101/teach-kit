@@ -6,7 +6,7 @@ import { chromium } from "@playwright/test";
 
 const project = resolve(import.meta.dir, "../..");
 
-async function run(args: string[], cwd: string): Promise<void> {
+async function run(args: string[], cwd: string, expectedExitCode = 0) {
   const child = Bun.spawn([process.execPath, ...args], {
     cwd,
     stdout: "pipe",
@@ -17,7 +17,8 @@ async function run(args: string[], cwd: string): Promise<void> {
     new Response(child.stderr).text(),
     child.exited,
   ]);
-  expect(exitCode, `${args.join(" ")}\n${stdout}\n${stderr}`).toBe(0);
+  expect(exitCode, `${args.join(" ")}\n${stdout}\n${stderr}`).toBe(expectedExitCode);
+  return { stdout, stderr };
 }
 
 test("installs the packed artifact with types, CLI, browser pages, and Markdown refresh", async () => {
@@ -175,6 +176,17 @@ assert.match(tabs, /Installed panel/);
       [join(project, "node_modules/typescript/bin/tsc"), "--project", "tsconfig.json"],
       directory,
     );
+    await Bun.write(
+      join(directory, "course/lessons/ready.md"),
+      await Bun.file(new URL("../fixtures/legacy-columns.md", import.meta.url)).text(),
+    );
+    const retired = await run(
+      ["run", "node_modules/.bin/teach-kit", "check", "course/index.ts"],
+      directory,
+      1,
+    );
+    expect(retired.stderr).toContain('ready.md:3:1: Directive "columns" is no longer supported.');
+    expect(retired.stderr).toContain("Markdown table for comparisons");
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

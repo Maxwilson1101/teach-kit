@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServer } from "../../src/server/create-server";
 import { createTempCourse, type TempCourse } from "../helpers/temp-course";
@@ -177,6 +178,30 @@ test("rejects invalid lessons at startup rather than reporting them as planned",
   const course = await fixture();
   await Bun.write(join(course.directory, "lessons/first.md"), "<script>bad</script>");
   await expect(createServer({ port: 0, entry: course.entry })).rejects.toThrow("Raw HTML");
+});
+
+test("rejects retired layouts at startup with source-located diagnostics", async () => {
+  const course = await fixture();
+  const source = readFileSync(new URL("../fixtures/legacy-columns.md", import.meta.url), "utf8");
+  await Bun.write(join(course.directory, "lessons/first.md"), source);
+  await expect(
+    createServer({ port: 0, entry: course.entry }).then((server) => {
+      servers.push(server);
+    }),
+  ).rejects.toThrow(/first.md:3:1: Directive "columns" is no longer supported/);
+});
+
+test("returns a visible validation error when a running lesson gains a retired layout", async () => {
+  const course = await fixture();
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const source = readFileSync(new URL("../fixtures/legacy-columns.md", import.meta.url), "utf8");
+  await Bun.write(join(course.directory, "lessons/first.md"), source);
+  const response = await fetch(new URL("/api/lessons/first", server.url));
+  expect(response.status).toBe(422);
+  const body = await response.json();
+  expect(body.message).toContain('first.md:3:1: Directive "columns" is no longer supported.');
+  expect(body.message).toContain("Markdown table for comparisons");
 });
 
 test("reports missing frontend resources and occupied ports at startup", async () => {

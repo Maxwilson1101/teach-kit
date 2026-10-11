@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { type Root } from "mdast";
 import { validateDirectives } from "../../../src/markdown/directives";
 import { parseMarkdown } from "../../../src/markdown/parse";
@@ -16,6 +17,44 @@ function tree(source: string): Root {
 }
 
 describe("validateDirectives", () => {
+  test.each(["columns", "column"])(
+    "rejects the retired %s directive with located migration guidance in every form",
+    (name) => {
+      const message = `Directive "${name}" is no longer supported. Use sequential headings and paragraphs, or a Markdown table for comparisons.`;
+      for (const source of [`:::${name}\n\nBody.\n\n:::`, `::${name}`, `:${name}[Body]`]) {
+        expect(validate(source)).toEqual([
+          { severity: "error", path: PATH, line: 1, column: 1, message },
+        ]);
+      }
+    },
+  );
+
+  test("reports every retired container in a formerly valid two-column layout", () => {
+    const source = readFileSync(
+      new URL("../../fixtures/legacy-columns.md", import.meta.url),
+      "utf8",
+    );
+    const diagnostics = validate(source);
+    expect(diagnostics.map(({ line, column }) => ({ line, column }))).toEqual([
+      { line: 3, column: 1 },
+      { line: 4, column: 1 },
+      { line: 9, column: 1 },
+    ]);
+    expect(diagnostics.every(({ message }) => message.includes("Use sequential headings"))).toBe(
+      true,
+    );
+  });
+
+  test("still validates nested content inside a retired layout", () => {
+    const diagnostics = validate(
+      '::::columns\n\n:::callout{kind="danger"}\n\nBody.\n\n:::\n\n::::',
+    );
+    expect(diagnostics).toMatchObject([
+      { line: 1, message: expect.stringContaining("is no longer supported") },
+      { line: 3, message: expect.stringContaining('Unsupported "kind" value "danger"') },
+    ]);
+  });
+
   test("accepts an allowlisted callout with a kind and title", () => {
     const source = [
       ':::callout{kind="warning" title="Keep these separate"}',

@@ -59,6 +59,14 @@ function quoted(name: string): string {
   return `"${name}"`;
 }
 
+function retiredDirectiveMessage(name: string): string | undefined {
+  if (name !== "columns" && name !== "column") return undefined;
+  return (
+    `Directive ${quoted(name)} is no longer supported. ` +
+    "Use sequential headings and paragraphs, or a Markdown table for comparisons."
+  );
+}
+
 function validateAttributes(
   diagnostics: MarkdownDiagnostic[],
   path: string,
@@ -176,7 +184,13 @@ export function validateDirectives(tree: Root, path: string): MarkdownDiagnostic
         ? DIRECTIVE_RULES[node.name]
         : undefined;
       if (!rule) {
-        diagnostics.push(toDiagnostic(path, node, `Unknown directive ${quoted(node.name)}.`));
+        diagnostics.push(
+          toDiagnostic(
+            path,
+            node,
+            retiredDirectiveMessage(node.name) ?? `Unknown directive ${quoted(node.name)}.`,
+          ),
+        );
       } else {
         const parent = ancestors.at(-1);
         if (rule.parent !== undefined && parent !== rule.parent) {
@@ -215,7 +229,8 @@ export function validateDirectives(tree: Root, path: string): MarkdownDiagnostic
         toDiagnostic(
           path,
           node,
-          `Directive ${quoted(node.name)} must use the container form (:::name).`,
+          retiredDirectiveMessage(node.name) ??
+            `Directive ${quoted(node.name)} must use the container form (:::name).`,
         ),
       );
       return;

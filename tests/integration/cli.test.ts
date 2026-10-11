@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createTempCourse, type TempCourse } from "../helpers/temp-course";
 
@@ -51,6 +52,18 @@ test("reports unplanned Markdown as a warning without failing a valid course", a
   const result = await run(["check"], fixture.directory);
   expect(result.code).toBe(0);
   expect(result.stderr).toContain("not part of the course plan");
+});
+
+test("fails check with source locations and migration guidance for retired layouts", async () => {
+  const fixture = await course();
+  const source = readFileSync(new URL("../fixtures/legacy-columns.md", import.meta.url), "utf8");
+  await Bun.write(resolve(fixture.directory, "lessons/ready.md"), source);
+  const result = await run(["check"], fixture.directory);
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain('ready.md:3:1: Directive "columns" is no longer supported.');
+  expect(result.stderr).toContain('ready.md:4:1: Directive "column" is no longer supported.');
+  expect(result.stderr).toContain("Use sequential headings and paragraphs, or a Markdown table");
+  expect(result.stdout).not.toContain("available");
 });
 
 test("returns nonzero located diagnostics for invalid content and missing entries", async () => {
