@@ -12,14 +12,23 @@ export interface DetailsProps {
  */
 export function Details({ title, children }: DetailsProps) {
   return (
-    <details
-      className="my-6 border-y border-border bg-background py-4 font-sans text-base"
-      data-details
-    >
-      <summary className="cursor-pointer font-semibold text-foreground">{title}</summary>
-      <div className="mt-3 space-y-3 text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-        {children}
-      </div>
+    <details className="disclosure" data-details>
+      <summary>
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m9 5 7 7-7 7" />
+        </svg>
+        <span>{title}</span>
+      </summary>
+      <div className="disclosure-body annotation-body">{children}</div>
     </details>
   );
 }

@@ -17,6 +17,7 @@ export interface TabItem {
  */
 export function Tabs({ tabs }: { tabs: TabItem[] }) {
   const [active, setActive] = useState(tabs[0]?.id ?? "");
+  const [pointerFocus, setPointerFocus] = useState(false);
   if (tabs.length === 0) return null;
 
   return (
@@ -25,20 +26,19 @@ export function Tabs({ tabs }: { tabs: TabItem[] }) {
       onValueChange={setActive}
       activationMode="automatic"
       orientation="horizontal"
-      className="my-8 font-sans text-base leading-relaxed"
+      className="lesson-tabs"
       data-tabs
+      data-pointer-focus={pointerFocus}
+      // Radix focuses on mouse down, which can retain the browser's keyboard focus indicator.
+      onPointerDownCapture={() => setPointerFocus(true)}
+      onKeyDownCapture={() => setPointerFocus(false)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setPointerFocus(false);
+      }}
     >
-      <TabsPrimitive.List loop className="flex flex-wrap gap-1 border-b border-border">
+      <TabsPrimitive.List loop className="lesson-tab-list">
         {tabs.map((tab) => (
-          <TabsPrimitive.Trigger
-            key={tab.id}
-            value={tab.id}
-            className={
-              tab.id === active
-                ? "border-b-2 border-foreground px-4 py-3 font-medium text-foreground"
-                : "border-b-2 border-transparent px-4 py-3 text-muted-foreground hover:text-foreground"
-            }
-          >
+          <TabsPrimitive.Trigger key={tab.id} value={tab.id} className="lesson-tab">
             {tab.title}
           </TabsPrimitive.Trigger>
         ))}
@@ -50,7 +50,7 @@ export function Tabs({ tabs }: { tabs: TabItem[] }) {
           forceMount
           hidden={tab.id !== active}
           tabIndex={tab.id === active ? 0 : -1}
-          className="space-y-3 pt-4 text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+          className="lesson-tab-panel annotation-body"
         >
           {tab.content}
         </TabsPrimitive.Content>
