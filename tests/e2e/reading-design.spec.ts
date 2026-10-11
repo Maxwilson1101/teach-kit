@@ -43,10 +43,16 @@ test("presents a continuous serif article in a centered reading column", async (
   const paragraph = article.locator("p").first();
   const typography = await paragraph.evaluate((element) => {
     const style = getComputedStyle(element);
-    return { family: style.fontFamily, size: Number.parseFloat(style.fontSize) };
+    return {
+      family: style.fontFamily,
+      size: Number.parseFloat(style.fontSize),
+      lineHeight: Number.parseFloat(style.lineHeight),
+    };
   });
   expect(typography.family).toContain("Georgia");
-  expect(typography.size).toBeGreaterThanOrEqual(18);
+  expect(typography.size).toBeGreaterThanOrEqual(16);
+  expect(typography.size).toBeLessThanOrEqual(18);
+  expect(typography.lineHeight / typography.size).toBeLessThanOrEqual(1.7);
   const borderedWrappers = await paragraph.evaluate((element) => {
     let count = 0;
     for (
@@ -66,4 +72,12 @@ test("presents a continuous serif article in a centered reading column", async (
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("The reading viewport is missing.");
   expect(Math.abs(bounds.x - (viewport.width - bounds.width) / 2)).toBeLessThan(2);
+});
+
+test("keeps lesson and course titles compact", async ({ page }) => {
+  const fontSize = (element: Element) => Number.parseFloat(getComputedStyle(element).fontSize);
+  await page.goto("/lessons/message-lifecycle");
+  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(36);
+  await page.goto("/");
+  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(48);
 });

@@ -54,7 +54,7 @@ function tickWaveClass(distance: number | null): string {
 }
 
 const OUTLINE_LINK =
-  "block border-l-2 border-transparent px-2 py-2.5 leading-[1.6] hover:border-primary hover:text-primary aria-[current=location]:border-primary aria-[current=location]:text-primary";
+  "block border-l-2 border-transparent px-2 py-2.5 leading-[1.5] hover:border-primary hover:text-primary aria-[current=location]:border-primary aria-[current=location]:text-primary";
 
 function SectionLink({
   section,
@@ -138,15 +138,13 @@ function SectionLink({
           <div
             ref={refs.setFloating}
             style={floatingStyles}
-            className="section-preview z-30 w-[min(400px,calc(100vw_-_24px))] max-h-[calc(100dvh_-_24px)] overflow-y-auto rounded-2xl border bg-card p-3 text-sm leading-normal text-card-foreground shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+            className="section-preview z-30 w-[min(400px,calc(100vw_-_24px))] max-h-[calc(100dvh_-_24px)] overflow-y-auto rounded-2xl border bg-card p-3 text-xs leading-normal text-card-foreground shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
             {...getFloatingProps({
               onPointerEnter: () => setHoveredIndex(index),
               onPointerLeave: () => setHoveredIndex(null),
             })}
           >
-            <p className="section-preview-title m-0 text-base leading-[1.4] font-semibold">
-              {title}
-            </p>
+            <p className="section-preview-title m-0 text-sm leading-[1.4] font-semibold">{title}</p>
             {section.summary && (
               <p className="section-preview-summary mt-1.5 line-clamp-4 text-muted-foreground">
                 {section.summary}
@@ -193,7 +191,7 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
       className={
         wide
           ? "section-rail fixed top-1/2 left-[max(24px,calc((100vw_-_760px)_/_2_-_80px))] z-20 hidden max-h-[calc(100dvh_-_48px)] -translate-y-1/2 overflow-y-auto min-[1000px]:block"
-          : "section-outline mb-8 border-y py-3 text-sm min-[1000px]:hidden"
+          : "section-outline mb-8 border-y py-3 text-xs min-[1000px]:hidden"
       }
       onKeyDown={(event) => {
         if (event.key === "Escape" && !wide && expanded) {

@@ -24,7 +24,7 @@ function Neighbor({ lesson, label }: { lesson: LessonOverview | undefined; label
   const content = (
     <>
       <span className="block text-xs text-muted-foreground">{label}</span>
-      <span className="mt-2 block text-base font-semibold leading-snug">{lesson.title}</span>
+      <span className="mt-2 block text-sm font-semibold leading-snug">{lesson.title}</span>
       {lesson.status === "planned" && (
         <Badge variant="outline" className="mt-3">
           计划中
@@ -89,7 +89,7 @@ export function CourseView({
           <h1 className={lesson ? "lesson-title" : "course-title"}>
             {lesson?.title ?? course.title}
           </h1>
-          <p className="mt-5 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
             {lesson?.description ?? course.description}
           </p>
           <div className="mt-7 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
@@ -120,7 +120,7 @@ export function CourseView({
             </article>
             <nav
               aria-label="课程导航"
-              className="mt-14 grid gap-4 border-t pt-4 sm:grid-cols-2 sm:gap-10"
+              className="mt-10 grid gap-4 border-t pt-4 sm:grid-cols-2 sm:gap-10"
             >
               <Neighbor lesson={course.lessons[lessonIndex - 1]} label="上一课" />
               <Neighbor lesson={course.lessons[lessonIndex + 1]} label="下一课" />
@@ -141,7 +141,7 @@ export function CourseView({
             )}
             <ol>
               {course.lessons.map((item, index) => (
-                <li key={item.id} className="flex gap-5 border-b py-7 sm:gap-8 sm:py-9">
+                <li key={item.id} className="flex gap-5 border-b py-5 sm:gap-8 sm:py-7">
                   <span aria-hidden="true" className="lesson-number">
                     {String(index + 1).padStart(2, "0")}
                   </span>
@@ -155,7 +155,7 @@ export function CourseView({
                         {item.status === "generated" ? "已完成" : "计划中"}
                       </Badge>
                     </div>
-                    <h3 className="text-xl font-bold leading-snug tracking-tight sm:text-2xl">
+                    <h3 className="text-lg font-bold leading-snug tracking-tight sm:text-xl">
                       {item.status === "generated" ? (
                         <a className="course-link hover:text-primary" href={`/lessons/${item.id}`}>
                           {item.title}
@@ -164,7 +164,7 @@ export function CourseView({
                         item.title
                       )}
                     </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground sm:text-sm">
                       {item.description}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ export function CourseView({
         )}
       </main>
       <footer
-        className={`reading-column ${lesson ? "" : "course-index"} mt-12 pb-10 text-xs text-muted-foreground`}
+        className={`reading-column ${lesson ? "" : "course-index"} mt-10 pb-10 text-xs text-muted-foreground`}
       >
         <div className="flex flex-wrap justify-between gap-3 border-t pt-6">
           <span>{course.title}</span>

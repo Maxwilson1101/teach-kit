@@ -45,7 +45,7 @@ export function Tabs({ tabs }: { tabs: TabItem[] }) {
     >
       <TabsPrimitive.List
         loop
-        className="lesson-tab-list flex items-start gap-6 overflow-x-auto p-1 font-sans text-base leading-6 [scrollbar-width:thin]"
+        className="lesson-tab-list flex items-start gap-6 overflow-x-auto p-1 font-sans text-sm leading-5 [scrollbar-width:thin]"
       >
         {tabs.map((tab) => (
           <TabsPrimitive.Trigger

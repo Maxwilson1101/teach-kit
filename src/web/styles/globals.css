@@ -70,7 +70,7 @@
   }
   body {
     @apply m-0 bg-background text-foreground font-sans;
-    line-height: 1.6;
+    line-height: 1.5;
     overflow-wrap: anywhere;
   }
   a,
@@ -88,7 +88,7 @@
     @apply border-b bg-background;
   }
   .site-wordmark {
-    @apply font-serif text-3xl font-bold tracking-tight;
+    @apply font-serif text-2xl font-bold tracking-tight;
   }
   .reading-column {
     @apply mx-auto max-w-[760px] px-6 sm:px-5;
@@ -97,16 +97,16 @@
     @apply max-w-[860px];
   }
   .reading-heading {
-    @apply pt-12 pb-10 sm:pt-16 sm:pb-12;
+    @apply pt-10 pb-8 sm:pt-12 sm:pb-9;
   }
   .course-title {
-    @apply font-serif text-[2.75rem] font-bold leading-[1.1] tracking-tight sm:text-6xl;
+    @apply font-serif text-[2.25rem] font-bold leading-[1.1] tracking-tight sm:text-5xl;
   }
   .lesson-title {
-    @apply text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-[2.75rem];
+    @apply text-[1.75rem] font-bold leading-[1.15] tracking-tight sm:text-4xl;
   }
   .lesson-number {
-    @apply w-9 shrink-0 text-3xl font-bold leading-none tracking-tight text-border sm:w-12 sm:text-[2.5rem];
+    @apply w-9 shrink-0 text-2xl font-bold leading-none tracking-tight text-border sm:w-12 sm:text-3xl;
   }
   .skip-link {
     @apply sr-only;
@@ -115,53 +115,53 @@
     @apply not-sr-only fixed top-3 left-3 z-50 rounded-md bg-card px-4 py-2 text-primary;
   }
   .lesson-prose {
-    @apply font-serif text-lg leading-[1.75] sm:text-xl;
+    @apply font-serif text-base leading-[1.65] sm:text-lg;
     min-width: 0;
   }
   .lesson-prose h1,
   .lesson-prose h2 {
-    @apply mt-12 mb-5 font-sans text-2xl font-bold leading-snug tracking-tight sm:text-[1.75rem];
+    @apply mt-9 mb-4 font-sans text-xl font-bold leading-snug tracking-tight sm:text-2xl;
   }
   .lesson-prose h3 {
-    @apply mt-8 mb-4 font-sans text-xl font-semibold leading-snug;
+    @apply mt-7 mb-3 font-sans text-lg font-semibold leading-snug;
   }
   .lesson-prose h4,
   .lesson-prose h5,
   .lesson-prose h6 {
-    @apply mt-6 mb-3 font-sans text-lg font-semibold;
+    @apply mt-5 mb-2 font-sans text-base font-semibold;
   }
   .lesson-prose p {
-    @apply my-6;
+    @apply my-4;
   }
   .lesson-prose a {
     @apply underline decoration-foreground/40 underline-offset-4 hover:decoration-primary hover:text-primary;
   }
   .lesson-prose ul {
-    @apply my-6 list-disc pl-6;
+    @apply my-4 list-disc pl-6;
   }
   .lesson-prose ol {
-    @apply my-6 list-decimal pl-6;
+    @apply my-4 list-decimal pl-6;
   }
   .lesson-prose li {
-    @apply my-3 pl-1;
+    @apply my-2 pl-1;
   }
   .lesson-prose blockquote {
-    @apply my-8 border-l-3 border-foreground pl-6 italic;
+    @apply my-6 border-l-3 border-foreground pl-6 italic;
   }
   .lesson-prose hr {
-    @apply my-10 border-border;
+    @apply my-8 border-border;
   }
   .lesson-prose img {
-    @apply mx-auto my-8 h-auto max-w-full;
+    @apply mx-auto my-6 h-auto max-w-full;
   }
   .mermaid-figure {
-    @apply my-8 overflow-x-auto;
+    @apply my-6 overflow-x-auto;
   }
   .mermaid-figure svg {
     @apply mx-auto block h-auto max-w-full;
   }
   .lesson-prose pre {
-    @apply my-8 overflow-x-auto rounded-md border bg-muted p-5 font-mono text-sm text-foreground;
+    @apply my-6 overflow-x-auto rounded-md border bg-muted p-4 font-mono text-sm text-foreground;
   }
   .lesson-prose code {
     @apply rounded bg-muted px-1 py-0.5 font-mono text-sm;
@@ -209,7 +209,7 @@
     color: var(--destructive);
   }
   .lesson-prose .table-scroll {
-    @apply my-8 overflow-x-auto;
+    @apply my-6 overflow-x-auto;
   }
   .lesson-prose table {
     @apply w-full font-sans text-sm leading-relaxed;
