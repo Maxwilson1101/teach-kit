@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { type CourseOverview, type LessonOverview, type LessonPage } from "../course/page";
+import {
+  type CourseOverview,
+  type LessonOverview,
+  type LessonPage,
+  MAIN_CONTENT_ID,
+} from "../course/page";
 import { SectionNavigation } from "./components/section-navigation";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
@@ -49,7 +54,7 @@ export function CourseView({
   const available = course.lessons.filter((item) => item.status === "generated").length;
   return (
     <>
-      <a href="#main-content" className="skip-link">
+      <a href={`#${MAIN_CONTENT_ID}`} className="skip-link">
         Skip to content
       </a>
       <header className="site-header">
@@ -70,7 +75,7 @@ export function CourseView({
         </div>
       </header>
       <main
-        id="main-content"
+        id={MAIN_CONTENT_ID}
         tabIndex={-1}
         className={`reading-column ${lesson ? "" : "course-index"} outline-none`}
       >

@@ -1,11 +1,12 @@
 import { type Page } from "@playwright/test";
+import { MAIN_CONTENT_ID } from "../../src/course/page";
 import { parseMarkdown } from "../../src/markdown/parse";
 import { extractSections } from "../../src/markdown/sections";
 
 /** Exercises the real page and renderer with metadata derived from a parsed boundary fixture. */
 export async function openNavigationLesson(page: Page, source: string, fragment = "") {
   const { tree } = parseMarkdown("navigation.md", source);
-  const sections = extractSections(tree);
+  const sections = extractSections(tree, [MAIN_CONTENT_ID]);
   let index = 0;
   for (const node of tree.children) {
     if (node.type === "heading" && node.depth === 2) {

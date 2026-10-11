@@ -2,7 +2,7 @@ import { relative, sep } from "node:path";
 import { definitions } from "mdast-util-definitions";
 import { visit } from "unist-util-visit";
 import { loadCourse } from "../course/content";
-import { type CourseOverview, type LessonPage } from "../course/page";
+import { type CourseOverview, type LessonPage, MAIN_CONTENT_ID } from "../course/page";
 import { validateDirectives } from "../markdown/directives";
 import { parseMarkdown } from "../markdown/parse";
 import { resolveLocalAsset, validateResources } from "../markdown/resources";
@@ -36,7 +36,7 @@ export async function readCoursePages(entry: string) {
           .join("\n"),
       );
     }
-    const sections = extractSections(document.tree);
+    const sections = extractSections(document.tree, [MAIN_CONTENT_ID]);
     let sectionIndex = 0;
     for (const node of document.tree.children) {
       if (node.type === "heading" && node.depth === 2) {

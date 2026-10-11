@@ -126,6 +126,18 @@ test("shares root heading IDs and prose summaries while excluding nested heading
   expect(last.sections).toEqual([]);
 });
 
+test("does not assign the skip-link target ID to a lesson heading", async () => {
+  const course = await fixture();
+  await Bun.write(join(course.directory, "lessons/first.md"), "## Main content\n\nBody.");
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const lesson = await (await fetch(new URL("/api/lessons/first", server.url))).json();
+  expect(lesson.sections).toEqual([
+    { id: "main-content-1", title: "Main content", summary: "Body." },
+  ]);
+  expect(lesson.tree.children[0].data.hProperties.id).toBe("main-content-1");
+});
+
 test("serves referenced images outside assets without exposing other course files", async () => {
   const course = await fixture();
   await Bun.write(

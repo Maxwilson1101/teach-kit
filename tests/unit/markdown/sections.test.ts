@@ -119,6 +119,22 @@ describe("extractSections", () => {
     expect(sections("## Summary\n\n### Subheading")[0]?.summary).toBe("");
   });
 
+  test("avoids reserved page IDs while keeping duplicate section anchors unique", () => {
+    const tree = parseMarkdown(
+      "lesson.md",
+      "## Main content\n\n## Main content\n\n## Main content-1\n\n## Other",
+    ).tree;
+    expect(
+      extractSections(tree, ["main-content", "main-content-1"]).map((section) => section.id),
+    ).toEqual(["main-content-2", "main-content-3", "main-content-1-1", "other"]);
+    expect(extractSections(tree).map((section) => section.id)).toEqual([
+      "main-content",
+      "main-content-1",
+      "main-content-1-1",
+      "other",
+    ]);
+  });
+
   test("ignores content before the first level-two heading", () => {
     expect(sections("Intro only.")).toEqual([]);
   });

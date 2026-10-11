@@ -329,6 +329,23 @@ test("switches at the gutter breakpoint without retaining previews or expanded o
   await expect(navigation.getByRole("link")).toHaveCount(3);
 });
 
+test("keeps heading navigation distinct from the skip-to-content target", async ({
+  page,
+}, testInfo) => {
+  await openNavigationLesson(page, "## Main content\n\nBody.");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  if (testInfo.project.name === "mobile-chromium") {
+    await navigation.getByRole("button", { name: "On this page" }).click();
+  }
+  await navigation.getByRole("link", { name: "Main content", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Main content", exact: true })).toBeFocused();
+  await expect(page).toHaveURL(/#main-content-1$/);
+  await page.locator(".skip-link").focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#main-content$/);
+  await expect(page.locator("main")).toBeFocused();
+});
+
 test("tracks narrow reading state and restores deep links without expanding the outline", async ({
   page,
 }) => {

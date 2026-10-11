@@ -60,10 +60,15 @@ function summarize(nodes: readonly RootContent[]): string {
  * next top-level level-two heading; deeper headings do not split sections.
  * Empty or unsluggable titles use `section` as the anchor base, and duplicate
  * anchors receive unique suffixes. Summaries follow the prose rules above.
+ * Reserved page IDs are skipped using the same uniqueness suffix rules.
  * Does not mutate the tree or write anchor IDs onto heading nodes.
  */
-export function extractSections(tree: Root): MarkdownSection[] {
+export function extractSections(
+  tree: Root,
+  reservedIds: readonly string[] = [],
+): MarkdownSection[] {
   const slugger = new GithubSlugger();
+  const reserved = new Set(reservedIds);
   const sections: MarkdownSection[] = [];
   let current: { id: string; title: string; nodes: RootContent[] } | undefined;
 
@@ -76,7 +81,10 @@ export function extractSections(tree: Root): MarkdownSection[] {
     if (node.type === "heading" && node.depth === 2) {
       flush();
       const title = mdastToString(node).trim();
-      current = { id: slugger.slug(slug(title) ? title : "section"), title, nodes: [] };
+      const base = slug(title) ? title : "section";
+      let id = slugger.slug(base);
+      while (reserved.has(id)) id = slugger.slug(base);
+      current = { id, title, nodes: [] };
       continue;
     }
     if (current) current.nodes.push(node);
