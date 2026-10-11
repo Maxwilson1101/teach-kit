@@ -108,6 +108,30 @@
   .skip-link:focus {
     @apply not-sr-only fixed top-3 left-3 z-50 rounded-md bg-card px-4 py-2 text-primary;
   }
+  .section-outline {
+    margin-bottom: 32px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .section-outline ol {
+    max-height: min(50dvh, 360px);
+    overflow-y: auto;
+    margin-top: 12px;
+    padding: 4px;
+  }
+  .section-outline a {
+    display: block;
+    padding: 10px 8px;
+    border-left: 2px solid transparent;
+    line-height: 1.6;
+  }
+  .section-outline a:hover,
+  .section-outline a[aria-current="location"] {
+    color: var(--primary);
+    border-left-color: var(--primary);
+  }
   .section-rail {
     display: none;
     position: fixed;
@@ -244,6 +268,9 @@
 }
 
 @media (min-width: 1000px) {
+  .section-outline {
+    display: none;
+  }
   .section-rail {
     display: block;
   }

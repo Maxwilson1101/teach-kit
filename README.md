@@ -4,7 +4,7 @@ Teach Kit is a Bun package for turning Markdown lessons into a local course prev
 
 ## Status
 
-Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Desktop section anchor links, hover/focus previews, and active-section tracking are implemented; a narrow-screen outline, syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
+Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, hover/focus previews, active-section tracking, and a narrow-screen outline are implemented. Syntax highlighting, math, and Mermaid remain planned. The package name is provisional; it is not published yet.
 
 See [PLAN.md](PLAN.md) for the MVP checklist and acceptance criteria, and [AGENTS.md](AGENTS.md) for development rules.
 
@@ -107,6 +107,8 @@ Root-level headings (`##`) define primary lesson sections and navigation entries
 Preview summaries use the first non-empty paragraph, including paragraphs in lists and block quotes. Subheadings, code, tables, raw HTML, and other non-prose containers do not supply summaries. Inline formatting preserves text boundaries, and image alternative text contributes to the summary. Sections without prose have an empty summary.
 
 On desktop, the left section rail provides native anchor links. Hover or focus a link to preview its title and summary; moving into the preview keeps it open. Escape dismisses the preview without moving focus. Long titles wrap, summaries are visually shortened, and previews remain within the viewport. Floating UI handles non-modal hover/focus interactions and collision-aware positioning; the package owns the content and styling. The current section follows heading positions as you scroll, including after disclosures change the article height. Before the first section there is no current item; at the document bottom the final section is current. Selecting a section updates the URL fragment and focuses its heading. Ordinary scrolling does not rewrite the URL or add history entries; native fragment links preserve browser Back/Forward navigation.
+
+Below 1000px, where the centered article and side gutter no longer fit together, an **On this page** button expands a non-modal outline before the article. Select a link with touch, pointer, or Enter to collapse the outline and focus its heading. Escape collapses the outline and returns focus to the button; Tab can leave the outline normally. Long lists scroll within the outline or desktop rail. Lessons without root-level sections have no navigation control. Layout changes and lesson navigation reset open previews and outline state. Section jumps do not force smooth scrolling.
 
 Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
 
@@ -211,7 +213,7 @@ Type checking also rejects unused locals and parameters, missing return paths, a
 
 `bun run build` generates the public JavaScript entry, CLI, type declarations, and frontend assets in `dist/`. `bun run start` runs the repository example using an existing build; it is not a separate production-deployment workflow.
 
-Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. The main preview on port 4322 exercises the real example; a test-only preview on port 4323 exercises the renderer and components independently. The packed-package integration test installs the artifact in a temporary consumer, validates public types, starts its installed CLI, opens the overview and a lesson in Chromium, and verifies Markdown refresh and process cleanup. Generated build output and test reports are ignored by Git.
+Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. The main preview on port 4322 exercises the real example; a test-only preview on port 4323 exercises the renderer and components independently. The packed-package integration test installs the artifact in a temporary consumer, validates public types, starts its installed CLI, opens the overview and a lesson in Chromium, and verifies desktop/narrow-screen section jumps, Markdown refresh, and process cleanup. Generated build output and test reports are ignored by Git.
 
 ### Theme and Components
 

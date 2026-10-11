@@ -218,3 +218,145 @@ test("recalculates the active section after disclosure layout changes without sc
   await expect(current).toHaveAccessibleName("First");
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
 });
+
+test("uses a non-modal narrow outline by touch and keyboard, then focuses the selected heading", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.goto("/lessons/message-lifecycle");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const button = navigation.getByRole("button", { name: "On this page" });
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  const outlineId = await button.getAttribute("aria-controls");
+  expect(outlineId).toBeTruthy();
+  if (testInfo.project.name === "mobile-chromium") await button.tap();
+  else await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(navigation.getByRole("link")).toHaveCount(titles.length);
+  expect(await navigation.locator("ol").getAttribute("id")).toBe(outlineId);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("narrow-outline.png") });
+  const target = navigation.getByRole("link", { name: titles[1], exact: true });
+  if (testInfo.project.name === "mobile-chromium") await target.tap();
+  else await target.click();
+  await expect(page).toHaveURL(/#follow-one-message$/);
+  await expect(page.locator("#follow-one-message")).toBeFocused();
+  await expect(page.locator("#follow-one-message")).toBeInViewport();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await button.focus();
+  await page.keyboard.press("Enter");
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Tab");
+  await expect(navigation.getByRole("link").first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Space");
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await navigation.getByRole("link").last().focus();
+  await page.keyboard.press("Tab");
+  expect(await navigation.evaluate((element) => element.contains(document.activeElement))).toBe(
+    false,
+  );
+  await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("keeps long outlines usable at 320px and renders no toggle without sections", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  const longTitle = "AnUnbrokenSectionTitle".repeat(10);
+  await openNavigationLesson(
+    page,
+    [
+      `## ${longTitle}`,
+      ...Array.from({ length: 40 }, (_, index) => `## Section ${index + 1}`),
+    ].join("\n\n"),
+  );
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const button = navigation.getByRole("button", { name: "On this page" });
+  await button.click();
+  await expect(navigation.getByRole("link").first()).toHaveText(longTitle);
+  await navigation.getByRole("link").last().focus();
+  await expect(navigation.getByRole("link").last()).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("long-narrow-outline.png") });
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#section-40$/);
+  await expect(page.locator("#section-40")).toBeFocused();
+  await expect(page.locator("#section-40")).toBeInViewport();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await page.unroute("**/api/lessons/message-lifecycle");
+  await openNavigationLesson(page, "No sections here.");
+  await expect(page.getByRole("article")).toContainText("No sections here.");
+  await expect(navigation).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "On this page" })).toHaveCount(0);
+});
+
+test("switches at the gutter breakpoint without retaining previews or expanded outline state", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1000, height: 720 });
+  await page.goto("/lessons/message-lifecycle");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  await navigation.getByRole("link").first().focus();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await page.setViewportSize({ width: 999, height: 720 });
+  const button = navigation.getByRole("button", { name: "On this page" });
+  await expect(button).toBeVisible();
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await page.setViewportSize({ width: 1000, height: 720 });
+  await expect(button).toHaveCount(0);
+  await expect(navigation.getByRole("link")).toHaveCount(titles.length);
+  await page.screenshot({ path: testInfo.outputPath("gutter-breakpoint.png") });
+  await page.setViewportSize({ width: 999, height: 720 });
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("link", { name: /Next lesson.*Mailbox/ }).click();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await button.click();
+  await expect(navigation.getByRole("link")).toHaveCount(3);
+});
+
+test("tracks narrow reading state and restores deep links without expanding the outline", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 851 });
+  await page.goto("/lessons/message-lifecycle#follow-one-message");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const button = navigation.getByRole("button", { name: "On this page" });
+  const current = navigation.locator('[aria-current="location"]');
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await expect(current).toHaveAttribute("href", "#follow-one-message");
+  const historyLength = await page.evaluate(() => history.length);
+  await page
+    .locator("#authenticity-is-not-authorization")
+    .evaluate((heading) => heading.scrollIntoView());
+  await expect(current).toHaveAttribute("href", "#authenticity-is-not-authorization");
+  await expect(page).toHaveURL(/#follow-one-message$/);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  await button.click();
+  await navigation.getByRole("link", { name: titles[3], exact: true }).click();
+  await expect(page.locator("#authenticity-is-not-authorization")).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await page.goBack();
+  await expect(page).toHaveURL(/#follow-one-message$/);
+  await expect(current).toHaveAttribute("href", "#follow-one-message");
+  await page.goForward();
+  await expect(current).toHaveAttribute("href", "#authenticity-is-not-authorization");
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(current).toHaveAttribute("href", "#further-reading");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(current).toHaveCount(0);
+});

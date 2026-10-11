@@ -12,9 +12,18 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { type Dispatch, type MouseEvent, type SetStateAction, useEffect, useState } from "react";
+import {
+  type Dispatch,
+  type MouseEvent,
+  type SetStateAction,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { type MarkdownSection } from "../../markdown/sections";
 import { useActiveSection } from "../hooks/use-active-section";
+import { Button } from "./ui/button";
 
 /** Preserve native fragment navigation and history while moving focus into the article. */
 function focusHeading(event: MouseEvent<HTMLAnchorElement>, id: string) {
@@ -101,27 +110,86 @@ function SectionLink({
 
 export function SectionNavigation({ sections }: { sections: readonly MarkdownSection[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [wide, setWide] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const outlineId = useId();
+  const button = useRef<HTMLButtonElement>(null);
   const activeId = useActiveSection(sections);
   useEffect(() => {
+    // 760px reading column plus a gutter on each side, without shifting the article.
+    const media = window.matchMedia("(min-width: 1000px)");
+    const changeLayout = () => {
+      setWide(media.matches);
+      setExpanded(false);
+      setOpenId(null);
+    };
     const close = () => setOpenId(null);
+    changeLayout();
+    media.addEventListener("change", changeLayout);
     window.addEventListener("resize", close);
-    return () => window.removeEventListener("resize", close);
+    return () => {
+      media.removeEventListener("change", changeLayout);
+      window.removeEventListener("resize", close);
+    };
   }, []);
   if (!sections.length) return null;
   return (
-    <nav aria-label="Section navigation" className="section-rail">
-      <ol>
-        {sections.map((section, index) => (
-          <SectionLink
-            key={section.id}
-            section={section}
-            index={index}
-            active={activeId === section.id}
-            openId={openId}
-            setOpenId={setOpenId}
-          />
-        ))}
-      </ol>
+    <nav
+      aria-label="Section navigation"
+      className={wide ? "section-rail" : "section-outline"}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && !wide && expanded) {
+          event.preventDefault();
+          setExpanded(false);
+          button.current?.focus();
+        }
+      }}
+    >
+      {wide ? (
+        <ol>
+          {sections.map((section, index) => (
+            <SectionLink
+              key={section.id}
+              section={section}
+              index={index}
+              active={activeId === section.id}
+              openId={openId}
+              setOpenId={setOpenId}
+            />
+          ))}
+        </ol>
+      ) : (
+        <>
+          <Button
+            ref={button}
+            type="button"
+            variant="ghost"
+            className="w-full justify-between px-0 text-muted-foreground"
+            aria-expanded={expanded}
+            aria-controls={outlineId}
+            onClick={() => setExpanded((current) => !current)}
+          >
+            On this page
+            <span aria-hidden="true">{expanded ? "−" : "+"}</span>
+          </Button>
+          <ol id={outlineId} hidden={!expanded}>
+            {sections.map((section, index) => (
+              <li key={section.id}>
+                <a
+                  href={`#${section.id}`}
+                  aria-current={activeId === section.id ? "location" : undefined}
+                  onClick={(event) => {
+                    focusHeading(event, section.id);
+                    setExpanded(false);
+                  }}
+                >
+                  {section.title || `Section ${index + 1}`}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
     </nav>
   );
 }
