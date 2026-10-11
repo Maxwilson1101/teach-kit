@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { parseMarkdown } from "../../../src/markdown/parse";
 import {
+  resolveCourseResource,
   resolveLocalAsset,
   unsafeLinkMessage,
   validateResources,
@@ -101,6 +102,50 @@ describe("resolveLocalAsset", () => {
       ok: false,
       message: "Image source is empty.",
     });
+  });
+});
+
+describe("resolveCourseResource", () => {
+  test("leaves web, protocol-relative, root, anchor, and query links unchanged", () => {
+    for (const url of [
+      "https://example.com/path",
+      "mailto:tutor@example.com",
+      "//example.com/diagram.svg",
+      "/lessons/other",
+      "#section-one",
+      "?mode=reading",
+    ]) {
+      expect(resolveCourseResource("/course", url)).toEqual({ kind: "unchanged" });
+    }
+  });
+
+  test("maps lesson Markdown links to routes and preserves the fragment", () => {
+    expect(resolveCourseResource("/course", "lessons/other.md#review")).toEqual({
+      kind: "lesson",
+      url: "/lessons/other#review",
+    });
+    expect(resolveCourseResource("/course", "lessons/planned.md")).toEqual({
+      kind: "lesson",
+      url: "/lessons/planned",
+    });
+  });
+
+  test("maps assets and other course files to public URLs with their suffix", () => {
+    expect(resolveCourseResource("/course", "assets/my%20diagram.png?v=1#preview")).toEqual({
+      kind: "local",
+      url: "/assets/my%20diagram.png?v=1#preview",
+      file: resolve("/course", "assets/my diagram.png"),
+    });
+    expect(resolveCourseResource("/course", "figure%20one.svg?v=2#detail")).toEqual({
+      kind: "local",
+      url: "/_course-assets/figure%20one.svg?v=2#detail",
+      file: resolve("/course", "figure one.svg"),
+    });
+  });
+
+  test("leaves missing and escaping resources unchanged", () => {
+    expect(resolveCourseResource("/course", "../secret.png")).toEqual({ kind: "unchanged" });
+    expect(resolveCourseResource("/course", "  ")).toEqual({ kind: "unchanged" });
   });
 });
 

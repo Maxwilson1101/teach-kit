@@ -1,11 +1,10 @@
-import { relative, sep } from "node:path";
 import { definitions } from "mdast-util-definitions";
 import { visit } from "unist-util-visit";
 import { loadCourse } from "../course/content";
 import { type CourseOverview, type LessonPage, MAIN_CONTENT_ID } from "../course/page";
 import { validateDirectives } from "../markdown/directives";
 import { parseMarkdown } from "../markdown/parse";
-import { resolveLocalAsset, validateResources } from "../markdown/resources";
+import { resolveCourseResource, validateResources } from "../markdown/resources";
 import { extractSections } from "../markdown/sections";
 
 export class CourseContentError extends Error {}
@@ -45,23 +44,30 @@ export async function readCoursePages(entry: string) {
     }
     const definition = definitions(document.tree);
     visit(document.tree, (node) => {
-      if (node.type !== "image" && node.type !== "imageReference") return;
-      const url = node.type === "image" ? node.url : definition(node.identifier)?.url;
+      if (
+        node.type !== "link" &&
+        node.type !== "image" &&
+        node.type !== "linkReference" &&
+        node.type !== "imageReference"
+      )
+        return;
+      const isImage = node.type === "image" || node.type === "imageReference";
+      const url =
+        node.type === "image" || node.type === "link" ? node.url : definition(node.identifier)?.url;
       if (!url) return;
-      const asset = resolveLocalAsset(loaded.directory, url);
-      if (!asset.ok) return;
-      const path = relative(loaded.directory, asset.file)
-        .split(sep)
-        .map(encodeURIComponent)
-        .join("/");
-      const served = path.startsWith("assets/") ? `/${path}` : `/_course-assets/${path}`;
-      assets.set(served, asset.file);
-      if (node.type === "image") node.url = served;
-      else {
-        // Inline reference images so a shared definition can still be used as a link.
+      const resource = resolveCourseResource(loaded.directory, url);
+      if (resource.kind === "unchanged") return;
+      // Only images publish files outside the assets directory; links stay contained.
+      if (isImage && resource.kind === "local") {
+        assets.set(resource.url.split(/[?#]/, 1)[0] ?? resource.url, resource.file);
+      }
+      if (node.type === "link" || node.type === "image") {
+        node.url = resource.url;
+      } else {
+        // Inline references so a shared definition can serve both links and images.
         Object.assign(node, {
-          type: "image",
-          url: served,
+          type: isImage ? "image" : "link",
+          url: resource.url,
           title: definition(node.identifier)?.title ?? null,
         });
       }

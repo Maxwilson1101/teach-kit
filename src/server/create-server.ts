@@ -38,11 +38,11 @@ export async function createServer({
         return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, HEAD" } });
       }
       if (pathname.startsWith("/assets/")) {
-        const asset = resolveLocalAsset(initial.directory, pathname.slice(1));
-        if (!asset.ok) return notFound();
-        // Only the consumer's assets directory is public, never its entry or lesson sources.
+        // Resolving against the assets directory keeps the containment check
+        // portable and rejects traversal before any file is served.
         const assetsDirectory = resolve(initial.directory, "assets");
-        if (!asset.file.startsWith(`${assetsDirectory}/`)) return notFound();
+        const asset = resolveLocalAsset(assetsDirectory, pathname.slice("/assets/".length));
+        if (!asset.ok) return notFound();
         try {
           if (!(await stat(asset.file)).isFile()) return notFound();
           return new Response(Bun.file(asset.file));

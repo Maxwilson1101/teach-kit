@@ -8,7 +8,7 @@
  */
 
 import { stat } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { type Root, type RootContent } from "mdast";
 import { definitions } from "mdast-util-definitions";
 import { visit } from "unist-util-visit";
@@ -76,6 +76,56 @@ export function resolveLocalAsset(courseDirectory: string, url: string): LocalAs
     return { ok: false, message: `Image path escapes the course directory: ${value}.` };
   }
   return { ok: true, file };
+}
+
+export type CourseResource =
+  | { kind: "unchanged" }
+  | { kind: "lesson"; url: string }
+  | { kind: "local"; url: string; file: string };
+
+const LESSON_LINK_PATTERN = /^lessons\/([^/]+)\.md$/;
+
+/** Splits a URL into its path and the query/fragment suffix. */
+function splitUrlSuffix(value: string): { path: string; suffix: string } {
+  const hashAt = value.indexOf("#");
+  const withoutHash = hashAt === -1 ? value : value.slice(0, hashAt);
+  const hash = hashAt === -1 ? "" : value.slice(hashAt);
+  const queryAt = withoutHash.indexOf("?");
+  const path = queryAt === -1 ? withoutHash : withoutHash.slice(0, queryAt);
+  const suffix = (queryAt === -1 ? "" : withoutHash.slice(queryAt)) + hash;
+  return { path, suffix };
+}
+
+/**
+ * Maps a Markdown link or image URL to its public course URL.
+ *
+ * External, protocol-relative, root-relative, anchor, and query-only values
+ * are left unchanged. `lessons/<id>.md` links map to `/lessons/<id>`. Local
+ * resources map to `/assets/...` when they live in the assets directory and to
+ * `/_course-assets/...` otherwise. Query strings and fragments are preserved.
+ */
+export function resolveCourseResource(courseDirectory: string, url: string): CourseResource {
+  const value = url.trim();
+  if (value === "" || value.startsWith("//")) return { kind: "unchanged" };
+  if (URL.parse(value)) return { kind: "unchanged" };
+
+  const { path, suffix } = splitUrlSuffix(value);
+  if (path === "" || path.startsWith("/")) return { kind: "unchanged" };
+
+  const lesson = LESSON_LINK_PATTERN.exec(path);
+  if (lesson) return { kind: "lesson", url: `/lessons/${lesson[1]}${suffix}` };
+
+  const asset = resolveLocalAsset(courseDirectory, path);
+  if (!asset.ok) return { kind: "unchanged" };
+
+  const relativePath = relative(courseDirectory, asset.file)
+    .split(sep)
+    .map(encodeURIComponent)
+    .join("/");
+  const served = relativePath.startsWith("assets/")
+    ? `/${relativePath}`
+    : `/_course-assets/${relativePath}`;
+  return { kind: "local", url: `${served}${suffix}`, file: asset.file };
 }
 
 export interface ResourceValidationOptions {

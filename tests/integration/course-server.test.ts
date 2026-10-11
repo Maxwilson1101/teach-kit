@@ -153,10 +153,125 @@ test("serves referenced images outside assets without exposing other course file
   servers.push(server);
   const body = await (await fetch(new URL("/api/lessons/first", server.url))).json();
   expect(JSON.stringify(body.tree)).toContain("/_course-assets/figure%20one.svg");
-  expect(JSON.stringify(body.tree)).toContain('"url":"figure%20one.svg"');
+  expect(JSON.stringify(body.tree)).toContain('"url":"/_course-assets/figure%20one.svg"');
   expect(body.tree.children[1].children[0].title).toBe("Shared diagram");
   expect((await fetch(new URL("/_course-assets/figure%20one.svg", server.url))).status).toBe(200);
   expect((await fetch(new URL("/_course-assets/secret.txt", server.url))).status).toBe(404);
+});
+
+test("serves nested assets with encoded names and rejects sibling-directory escapes", async () => {
+  const course = await fixture();
+  await Bun.write(join(course.directory, "assets/nested/figure one.svg"), "Nested figure.");
+  await Bun.write(join(course.directory, "assets-private/secret.txt"), "Private sibling.");
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const response = await fetch(new URL("/assets/nested/figure%20one.svg", server.url));
+  expect(response.status).toBe(200);
+  expect(await response.text()).toBe("Nested figure.");
+  for (const path of [
+    "/assets/%2e%2e%2fassets-private%2fsecret.txt",
+    "/assets/%2e%2e%5cassets-private%5csecret.txt",
+    "/assets/%2e%2e%2findex.ts",
+    "/assets",
+  ]) {
+    expect((await fetch(new URL(path, server.url))).status, path).toBe(404);
+  }
+});
+
+test("preserves query strings and fragments on inline and reference images", async () => {
+  const course = await fixture();
+  await Bun.write(join(course.directory, "figure one.svg"), "Outside figure.");
+  await Bun.write(
+    join(course.directory, "lessons/first.md"),
+    [
+      "![Inline](assets/model.svg?v=1#detail)",
+      "![Reference][figure]",
+      '[figure]: figure%20one.svg?v=2#overview "Figure title"',
+    ].join("\n\n"),
+  );
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const body = await (await fetch(new URL("/api/lessons/first", server.url))).json();
+  const images = body.tree.children
+    .filter((node: { type: string }) => node.type === "paragraph")
+    .flatMap((node: { children: { url: string }[] }) => node.children);
+  expect(images.map((image: { url: string }) => image.url)).toEqual([
+    "/assets/model.svg?v=1#detail",
+    "/_course-assets/figure%20one.svg?v=2#overview",
+  ]);
+  for (const image of images) {
+    expect((await fetch(new URL(image.url, server.url))).status).toBe(200);
+  }
+});
+
+test("resolves course-relative resource and lesson links while preserving web URLs and anchors", async () => {
+  const course = await fixture();
+  await Bun.write(join(course.directory, "figure one.svg"), "Linked figure.");
+  await Bun.write(join(course.directory, "assets/notes.txt"), "Linked notes.");
+  await Bun.write(
+    join(course.directory, "lessons/first.md"),
+    [
+      "## Model",
+      "[Notes](assets/notes.txt?v=1#notes)",
+      "[Figure][figure]",
+      "![Image][figure]",
+      '[figure]: figure%20one.svg?v=2#detail "Shared title"',
+      "[Next](lessons/last.md#review)",
+      "[Planned](lessons/planned.md)",
+      "[Local](#model)",
+      "[Query](?mode=reading)",
+      "[Route](/lessons/last)",
+      "[External](https://example.com/path)",
+      "[Email](mailto:teacher@example.com)",
+      "[CDN](//example.com/diagram.svg)",
+    ].join("\n\n"),
+  );
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const body = await (await fetch(new URL("/api/lessons/first", server.url))).json();
+  const links = body.tree.children
+    .filter((node: { type: string }) => node.type === "paragraph")
+    .flatMap((node: { children: { type: string; url?: string }[] }) => node.children)
+    .filter((node: { type: string }) => node.type === "link");
+  expect(links.map((link: { url: string }) => link.url)).toEqual([
+    "/assets/notes.txt?v=1#notes",
+    "/_course-assets/figure%20one.svg?v=2#detail",
+    "/lessons/last#review",
+    "/lessons/planned",
+    "#model",
+    "?mode=reading",
+    "/lessons/last",
+    "https://example.com/path",
+    "mailto:teacher@example.com",
+    "//example.com/diagram.svg",
+  ]);
+  const base = new URL("/lessons/first", server.url);
+  for (const link of links.slice(0, 3)) {
+    expect((await fetch(new URL(link.url, base))).status).toBe(200);
+  }
+  expect((await fetch(new URL(links[3].url, base))).status).toBe(404);
+});
+
+test("does not expose entry or lesson sources through local links and returns 404 for missing resources", async () => {
+  const course = await fixture();
+  await Bun.write(
+    join(course.directory, "lessons/first.md"),
+    "[Entry](index.ts)\n\n[Unplanned](lessons/orphan.md)\n\n[Missing](missing.pdf)\n\n[Escape](../secret.txt)",
+  );
+  await Bun.write(join(course.directory, "lessons/orphan.md"), "Private source.");
+  const server = await createServer({ port: 0, entry: course.entry });
+  servers.push(server);
+  const body = await (await fetch(new URL("/api/lessons/first", server.url))).json();
+  const links = body.tree.children.flatMap(
+    (node: { children: { url: string }[] }) => node.children,
+  );
+  for (const link of links) {
+    expect((await fetch(new URL(link.url, new URL("/lessons/first", server.url)))).status).toBe(
+      404,
+    );
+  }
+  expect((await fetch(new URL("/_course-assets/index.ts", server.url))).status).toBe(404);
+  expect((await fetch(new URL("/_course-assets/lessons/orphan.md", server.url))).status).toBe(404);
 });
 
 test("refreshes Markdown and fails visibly when generated content becomes invalid", async () => {
