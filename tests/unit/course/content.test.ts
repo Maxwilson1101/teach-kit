@@ -1,11 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { resolve } from "node:path";
-import { CourseLoadError, resolveLessonFile } from "../../../src/course/content";
+import { join, resolve } from "node:path";
+import {
+  CourseLoadError,
+  entryInspectionMessage,
+  resolveLessonFile,
+} from "../../../src/course/content";
 
 describe("resolveLessonFile", () => {
   test("resolves a lesson file inside the course lessons directory", () => {
     expect(resolveLessonFile("/course", "message-lifecycle")).toBe(
-      "/course/lessons/message-lifecycle.md",
+      join(resolve("/course"), "lessons", "message-lifecycle.md"),
     );
   });
 
@@ -25,5 +29,21 @@ describe("resolveLessonFile", () => {
 
   test("rejects an empty id", () => {
     expect(() => resolveLessonFile("/course", "")).toThrow(CourseLoadError);
+  });
+});
+
+describe("entryInspectionMessage", () => {
+  test("reports a missing entry as missing", () => {
+    expect(entryInspectionMessage({ code: "ENOENT" })).toBe("Course entry file does not exist.");
+  });
+
+  test("reports any other inspection failure with its reason", () => {
+    const error = Object.assign(new Error("ENOTDIR: not a directory, stat"), { code: "ENOTDIR" });
+    expect(entryInspectionMessage(error)).toBe(
+      "Failed to inspect the course entry: ENOTDIR: not a directory, stat",
+    );
+    expect(entryInspectionMessage("plain failure")).toBe(
+      "Failed to inspect the course entry: plain failure",
+    );
   });
 });

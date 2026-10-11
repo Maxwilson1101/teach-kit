@@ -89,8 +89,12 @@ assert.match(tabs, /Installed panel/);
 `,
     );
     await run(["run", "check.ts"], directory);
+    const installedManifest = (await Bun.file(
+      join(directory, "node_modules/teach-kit/package.json"),
+    ).json()) as { bin?: Record<string, string> };
+    expect(installedManifest.bin?.["teach-kit"]).toBe("./dist/server/cli.js");
     const installedCli = join(directory, "node_modules/teach-kit/dist/server/cli.js");
-    await run(["run", "node_modules/.bin/teach-kit", "check", "course/index.ts"], directory);
+    await run([installedCli, "check", "course/index.ts"], directory);
     const preview = Bun.spawn([process.execPath, installedCli, "dev", "course/index.ts"], {
       cwd: directory,
       env: { ...process.env, PORT: "0" },
@@ -151,7 +155,11 @@ assert.match(tabs, /Installed panel/);
         await Bun.write(join(directory, "course/lessons/ready.md"), "## Ready\n\nBody.");
       }
       preview.kill("SIGTERM");
-      expect(await preview.exited).toBe(0);
+      const exitCode = await preview.exited;
+      // POSIX runs the graceful-shutdown handler and exits 0. Windows cannot
+      // deliver SIGTERM to a spawned child, so the OS terminates the process.
+      if (process.platform === "win32") expect(exitCode).not.toBe(0);
+      else expect(exitCode).toBe(0);
     } finally {
       await browser?.close();
       preview.kill();
@@ -180,11 +188,7 @@ assert.match(tabs, /Installed panel/);
       join(directory, "course/lessons/ready.md"),
       await Bun.file(new URL("../fixtures/legacy-columns.md", import.meta.url)).text(),
     );
-    const retired = await run(
-      ["run", "node_modules/.bin/teach-kit", "check", "course/index.ts"],
-      directory,
-      1,
-    );
+    const retired = await run([installedCli, "check", "course/index.ts"], directory, 1);
     expect(retired.stderr).toContain('ready.md:3:1: Directive "columns" is no longer supported.');
     expect(retired.stderr).toContain("Markdown table for comparisons");
   } finally {

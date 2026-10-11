@@ -93,6 +93,16 @@ function isMissingFile(error: unknown): boolean {
 }
 
 /**
+ * Describes why the course entry could not be inspected.
+ * A missing entry is reported as planned content rather than as a failure.
+ */
+export function entryInspectionMessage(error: unknown): string {
+  if (isMissingFile(error)) return "Course entry file does not exist.";
+  const message = error instanceof Error ? error.message : String(error);
+  return `Failed to inspect the course entry: ${message}`;
+}
+
+/**
  * Finds top-level `lessons/*.md` files whose id is absent from the plan.
  * Nested directories and non-markdown files are ignored; every planned lesson
  * maps to exactly one top-level file.
@@ -127,9 +137,7 @@ async function findUnplannedLessons(
 
 async function importEntry(entry: string): Promise<unknown> {
   const stats = await stat(entry).catch((error: unknown) => {
-    if (isMissingFile(error)) throw new CourseLoadError(entry, "Course entry file does not exist.");
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CourseLoadError(entry, `Failed to inspect the course entry: ${message}`);
+    throw new CourseLoadError(entry, entryInspectionMessage(error));
   });
   if (!stats.isFile()) throw new CourseLoadError(entry, "Course entry is not a regular file.");
 

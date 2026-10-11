@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { createTempCourse, type TempCourse } from "../helpers/temp-course";
 
@@ -38,7 +39,7 @@ test("checks the default entry and an explicit entry from a different directory"
   const fixture = await course();
   for (const [args, cwd] of [
     [["check"], fixture.directory],
-    [["check", fixture.entry], "/tmp"],
+    [["check", fixture.entry], tmpdir()],
   ] as const) {
     const result = await run([...args], cwd);
     expect(result.code).toBe(0);
@@ -95,10 +96,10 @@ test("rejects unknown commands, extra arguments, and invalid ports", async () =>
   expect(await child.exited).toBe(1);
 });
 
-test("starts a preview, serves a direct lesson, and exits cleanly on SIGTERM", async () => {
+test("starts a preview, serves a direct lesson, and shuts down on SIGTERM", async () => {
   const fixture = await course();
   const child = Bun.spawn([process.execPath, cli, "dev", fixture.entry], {
-    cwd: "/tmp",
+    cwd: tmpdir(),
     env: { ...process.env, PORT: "0" },
     stdout: "pipe",
     stderr: "pipe",
@@ -116,7 +117,11 @@ test("starts a preview, serves a direct lesson, and exits cleanly on SIGTERM", a
     if (!url) throw new Error("Startup URL is missing.");
     expect((await fetch(new URL("/lessons/ready", url))).status).toBe(200);
     child.kill("SIGTERM");
-    expect(await child.exited).toBe(0);
+    const exitCode = await child.exited;
+    // POSIX runs the graceful-shutdown handler and exits 0. Windows cannot
+    // deliver SIGTERM to a spawned child, so the OS terminates the process.
+    if (process.platform === "win32") expect(exitCode).not.toBe(0);
+    else expect(exitCode).toBe(0);
   } finally {
     child.kill();
     await child.exited;
