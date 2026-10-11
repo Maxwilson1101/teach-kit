@@ -266,6 +266,12 @@
   .lesson-prose img {
     @apply mx-auto my-8 h-auto max-w-full;
   }
+  .mermaid-figure {
+    @apply my-8 overflow-x-auto;
+  }
+  .mermaid-figure svg {
+    @apply mx-auto block h-auto max-w-full;
+  }
   .lesson-prose pre {
     @apply my-8 overflow-x-auto rounded-md border bg-muted p-5 font-mono text-sm text-foreground;
   }

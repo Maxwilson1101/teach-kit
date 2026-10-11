@@ -81,3 +81,21 @@ test("highlights fenced code with the lesson token colors", async ({ page }, tes
   await expect(keyword).toHaveCSS("color", "rgb(24, 115, 60)");
   await page.screenshot({ path: testInfo.outputPath("code.png"), fullPage: true });
 });
+
+test("renders a Mermaid diagram as inline SVG without remote requests", async ({
+  page,
+}, testInfo) => {
+  const external: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).hostname !== "127.0.0.1") external.push(request.url());
+  });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+
+  await page.goto("/lessons/message-lifecycle");
+
+  await expect(page.locator(".mermaid-figure svg")).toBeVisible();
+  expect(external).toEqual([]);
+  expect(errors).toEqual([]);
+  await page.locator(".mermaid-figure").screenshot({ path: testInfo.outputPath("mermaid.png") });
+});

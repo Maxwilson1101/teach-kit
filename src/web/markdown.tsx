@@ -7,6 +7,7 @@
  */
 
 import { type Element, type Nodes as HastNodes, type Root as HastRoot } from "hast";
+import { fromHtml } from "hast-util-from-html";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { type Code, type Root } from "mdast";
 import { type ContainerDirective } from "mdast-util-directive";
@@ -19,6 +20,7 @@ import rehypeKatex from "rehype-katex";
 import { unified } from "unified";
 import { isCalloutKind } from "../markdown/callout-kind";
 import { MATH_STRICT } from "../markdown/math";
+import { type MermaidDiagram } from "../markdown/mermaid-node";
 import { Callout } from "./components/callout";
 import { Details } from "./components/details";
 import { type TabItem, Tabs } from "./components/tabs";
@@ -126,6 +128,23 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
           properties: { className: ["math", "math-display"] },
           children: [{ type: "text", value: node.value }],
         };
+      },
+      // The SVG is generated and sanitized while loading content; parse it back
+      // to HAST so the package keeps its no-raw-HTML rendering contract.
+      mermaidDiagram(_state, node: MermaidDiagram): Element {
+        const placeholder: Element = {
+          type: "element",
+          tagName: "div",
+          properties: {},
+          children: [],
+        };
+        directives.set(
+          placeholder,
+          <figure className="mermaid-figure">
+            {renderHast(fromHtml(node.svg, { fragment: true }))}
+          </figure>,
+        );
+        return placeholder;
       },
       containerDirective(state, node: ContainerDirective) {
         const content = renderDirective(node, (child) =>

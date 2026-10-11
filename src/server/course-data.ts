@@ -4,6 +4,7 @@ import { loadCourse } from "../course/content";
 import { type CourseOverview, type LessonPage, MAIN_CONTENT_ID } from "../course/page";
 import { validateDirectives } from "../markdown/directives";
 import { validateMath } from "../markdown/math";
+import { renderMermaidBlocks } from "../markdown/mermaid";
 import { parseMarkdown } from "../markdown/parse";
 import { resolveCourseResource, validateResources } from "../markdown/resources";
 import { extractSections } from "../markdown/sections";
@@ -21,6 +22,7 @@ export async function readCoursePages(entry: string) {
     const diagnostics = [
       ...document.diagnostics,
       ...validateMath(document.tree, lesson.file),
+      ...renderMermaidBlocks(document.tree, lesson.file),
       ...validateDirectives(document.tree, lesson.file),
       ...(await validateResources(document.tree, {
         path: lesson.file,

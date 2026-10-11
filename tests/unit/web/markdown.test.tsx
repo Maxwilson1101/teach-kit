@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { type Root } from "mdast";
 import { renderToStaticMarkup } from "react-dom/server";
+import { renderMermaidBlocks } from "../../../src/markdown/mermaid";
 import { parseMarkdown } from "../../../src/markdown/parse";
 import { Markdown } from "../../../src/web/markdown";
 
@@ -75,6 +76,20 @@ describe("Markdown", () => {
     const html = render([':::callout{kind="note"}', "", "Value $x^2$.", "", ":::"].join("\n"));
     expect(html).toContain('class="katex"');
     expect(html).not.toContain("math-inline");
+  });
+
+  test("renders a sanitized Mermaid diagram inside a figure", () => {
+    const document = parseMarkdown(
+      "lessons/mermaid.md",
+      "```mermaid\nflowchart LR\n A[Start] --> B[Done]\n```",
+    );
+    renderMermaidBlocks(document.tree, "lessons/mermaid.md");
+
+    const html = renderToStaticMarkup(<Markdown tree={document.tree} />);
+
+    expect(html).toContain('class="mermaid-figure"');
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("fonts.googleapis.com");
   });
 
   test("highlights code nested inside directive containers", () => {

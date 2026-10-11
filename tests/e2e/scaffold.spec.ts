@@ -34,10 +34,11 @@ test("shows the ordered course plan and opens a lesson using the keyboard", asyn
   expect(
     await page.locator(".skip-link").evaluate((element) => element.getBoundingClientRect().width),
   ).toBeLessThanOrEqual(1);
-  await expect(page.getByRole("img", { name: "消息交付角色" })).toBeVisible();
-  expect(
-    await page.getByRole("img").evaluate((img: HTMLImageElement) => img.naturalWidth),
-  ).toBeGreaterThan(0);
+  const diagramImage = page.getByRole("img", { name: "消息交付角色" });
+  await expect(diagramImage).toBeVisible();
+  expect(await diagramImage.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(
+    0,
+  );
   const summary = page.locator("summary").first();
   await summary.focus();
   await page.keyboard.press("Enter");
