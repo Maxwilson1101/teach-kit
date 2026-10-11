@@ -9,6 +9,7 @@ import { SectionNavigation } from "./components/section-navigation";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import { Markdown } from "./markdown";
+import "katex/dist/katex.min.css";
 import "./styles/globals.css";
 
 async function readJson<T>(url: string, signal: AbortSignal): Promise<T> {

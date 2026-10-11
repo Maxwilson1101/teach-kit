@@ -21,6 +21,7 @@ export const CORE_MODULES: readonly string[] = [
   "src/course/content.ts",
   "src/server/course-data.ts",
   "src/markdown/parse.ts",
+  "src/markdown/math.ts",
   "src/markdown/directives.ts",
   "src/markdown/callout-kind.ts",
   "src/markdown/sections.ts",

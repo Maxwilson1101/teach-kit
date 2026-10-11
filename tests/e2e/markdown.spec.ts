@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openNavigationLesson } from "../helpers/navigation-page";
 
 test("renders Markdown and nested teaching components without errors or overflow", async ({
   page,
@@ -39,4 +40,32 @@ test("renders Markdown and nested teaching components without errors or overflow
   );
   expect(errors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("markdown.png"), fullPage: true });
+});
+
+test("renders inline and display math with KaTeX without overflow", async ({ page }, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await openNavigationLesson(
+    page,
+    [
+      "## Formula",
+      "",
+      "Inline math $E = mc^2$ stays in the line.",
+      "",
+      "$$",
+      "\\int_0^1 x^2\\,dx = \\frac{1}{3}",
+      "$$",
+    ].join("\n"),
+  );
+
+  await expect(page.locator(".katex").first()).toBeVisible();
+  await expect(page.locator(".katex-display")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("math.png"), fullPage: true });
 });

@@ -9,6 +9,7 @@
 import { type Root } from "mdast";
 import remarkDirective from "remark-directive";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
@@ -24,18 +25,23 @@ export interface MarkdownDocument {
 }
 
 /**
- * Parses Markdown into an AST, enabling GitHub-flavored tables and container
- * directives. Directive fences use three or more colons; nesting an outer
- * container requires a longer fence than its inner containers. Raw HTML and
- * footnotes produce error diagnostics; every structure is preserved so
- * rendering, validation, and navigation share one parse result.
- * Does not validate directive rules or resource references.
+ * Parses Markdown into an AST, enabling GitHub-flavored tables, math
+ * expressions, and container directives. Directive fences use three or more
+ * colons; nesting an outer container requires a longer fence than its inner
+ * containers. Raw HTML and footnotes produce error diagnostics; every
+ * structure is preserved so rendering, validation, and navigation share one
+ * parse result. Does not validate directive, math, or resource rules.
  *
  * @param path Source identifier for diagnostics; used as supplied, without file access.
  * @param source Markdown text to parse.
  */
 export function parseMarkdown(path: string, source: string): MarkdownDocument {
-  const tree = unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(source) as Root;
+  const tree = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkMath)
+    .use(remarkDirective)
+    .parse(source) as Root;
   const diagnostics: MarkdownDiagnostic[] = [];
 
   visit(tree, (node) => {

@@ -40,6 +40,18 @@ describe("parseMarkdown", () => {
     expect(document.diagnostics).toEqual([]);
   });
 
+  test("parses inline and display math nodes", () => {
+    const document = parseMarkdown(
+      "lessons/math.md",
+      ["Energy is $E = mc^2$ inline.", "", "$$", "\\int_0^1 x^2\\,dx", "$$"].join("\n"),
+    );
+
+    const found = types(document.tree);
+    expect(found).toContain("inlineMath");
+    expect(found).toContain("math");
+    expect(document.diagnostics).toEqual([]);
+  });
+
   test("keeps image and link nodes with their URLs", () => {
     const document = parseMarkdown(
       "lessons/media.md",

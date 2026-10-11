@@ -295,6 +295,17 @@ test("rejects invalid lessons at startup rather than reporting them as planned",
   await expect(createServer({ port: 0, entry: course.entry })).rejects.toThrow("Raw HTML");
 });
 
+test("rejects invalid math at startup with source-located diagnostics", async () => {
+  const course = await fixture();
+  await Bun.write(
+    join(course.directory, "lessons/first.md"),
+    "Introduction.\n\nBad $\\frac{1}$ formula.\n",
+  );
+  await expect(createServer({ port: 0, entry: course.entry })).rejects.toThrow(
+    /first\.md:3:\d+: Invalid math/,
+  );
+});
+
 test("rejects retired layouts at startup with source-located diagnostics", async () => {
   const course = await fixture();
   const source = readFileSync(new URL("../fixtures/legacy-columns.md", import.meta.url), "utf8");

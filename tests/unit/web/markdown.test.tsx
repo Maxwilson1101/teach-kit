@@ -54,6 +54,20 @@ describe("Markdown", () => {
     expect(render("```\nplain\n```")).toContain("<pre><code>plain</code></pre>");
   });
 
+  test("renders inline and display math through KaTeX", () => {
+    const html = render("Energy is $E = mc^2$ inline.\n\n$$\n\\int_0^1 x\\,dx\n$$");
+
+    expect(html).toContain('class="katex"');
+    expect(html).toContain('class="katex-display"');
+    expect(html).not.toContain("math-inline");
+  });
+
+  test("renders math nested inside directive containers", () => {
+    const html = render([':::callout{kind="note"}', "", "Value $x^2$.", "", ":::"].join("\n"));
+    expect(html).toContain('class="katex"');
+    expect(html).not.toContain("math-inline");
+  });
+
   test("renders a GFM table with header cells and alignment", () => {
     const html = render("| left | right |\n| :- | -: |\n| a | b |");
 

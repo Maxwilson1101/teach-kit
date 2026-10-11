@@ -5,14 +5,18 @@
  * Raw HTML, footnotes, and unsupported directives are not rendered.
  */
 
-import { type Element, type Nodes as HastNodes } from "hast";
+import { type Element, type Nodes as HastNodes, type Root as HastRoot } from "hast";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { type Code, type Root } from "mdast";
 import { type ContainerDirective } from "mdast-util-directive";
+import { type InlineMath, type Math as MathNode } from "mdast-util-math";
 import { defaultHandlers, toHast } from "mdast-util-to-hast";
 import { type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import rehypeKatex from "rehype-katex";
+import { unified } from "unified";
 import { isCalloutKind } from "../markdown/callout-kind";
+import { MATH_STRICT } from "../markdown/math";
 import { Callout } from "./components/callout";
 import { Details } from "./components/details";
 import { type TabItem, Tabs } from "./components/tabs";
@@ -81,6 +85,12 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
       },
     });
 
+  // Math inside directive containers is converted separately, so every subtree
+  // runs through the same KaTeX transform as the document root.
+  const katex = unified().use(rehypeKatex, { strict: MATH_STRICT });
+  const renderMath = (hast: HastNodes): ReactNode =>
+    renderHast(katex.runSync(hast as HastRoot) as unknown as HastNodes);
+
   const hast = toHast(tree, {
     allowDangerousHtml: false,
     unknownHandler: () => undefined,
@@ -96,9 +106,26 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
         if (code?.type === "element") code.children = [{ type: "text", value: node.value }];
         return result;
       },
+      // Placeholders carrying the class names rehype-katex replaces below.
+      inlineMath(_state, node: InlineMath): Element {
+        return {
+          type: "element",
+          tagName: "span",
+          properties: { className: ["math", "math-inline"] },
+          children: [{ type: "text", value: node.value }],
+        };
+      },
+      math(_state, node: MathNode): Element {
+        return {
+          type: "element",
+          tagName: "div",
+          properties: { className: ["math", "math-display"] },
+          children: [{ type: "text", value: node.value }],
+        };
+      },
       containerDirective(state, node: ContainerDirective) {
         const content = renderDirective(node, (child) =>
-          renderHast({ type: "root", children: state.all(child) }),
+          renderMath({ type: "root", children: state.all(child) }),
         );
         if (content === null) return undefined;
         const placeholder: Element = {
@@ -113,5 +140,5 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
     },
   });
 
-  return renderHast(hast);
+  return renderMath(hast);
 }
