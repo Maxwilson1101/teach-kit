@@ -114,118 +114,6 @@
   .skip-link:focus {
     @apply not-sr-only fixed top-3 left-3 z-50 rounded-md bg-card px-4 py-2 text-primary;
   }
-  .section-outline {
-    margin-bottom: 32px;
-    padding: 12px 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .section-outline ol {
-    max-height: min(50dvh, 360px);
-    overflow-y: auto;
-    margin-top: 12px;
-    padding: 4px;
-  }
-  .section-outline a {
-    display: block;
-    padding: 10px 8px;
-    border-left: 2px solid transparent;
-    line-height: 1.6;
-  }
-  .section-outline a:hover,
-  .section-outline a[aria-current="location"] {
-    color: var(--primary);
-    border-left-color: var(--primary);
-  }
-  .section-rail {
-    display: none;
-    position: fixed;
-    left: max(24px, calc((100vw - 760px) / 2 - 80px));
-    top: 50%;
-    transform: translateY(-50%);
-    max-height: calc(100dvh - 48px);
-    overflow-y: auto;
-    z-index: 20;
-  }
-  .section-rail a {
-    display: flex;
-    width: 44px;
-    min-height: 13px;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 16px;
-    border-radius: 3px;
-  }
-  .section-tick {
-    display: block;
-    width: 8px;
-    height: 2px;
-    background: var(--muted-foreground);
-    opacity: 0.45;
-    transition:
-      width 120ms ease,
-      opacity 120ms ease;
-  }
-  .section-tick[data-hover-distance="0"] {
-    width: 33px;
-    opacity: 1;
-  }
-  .section-rail .section-tick[data-hover-distance="0"] {
-    background: var(--foreground);
-  }
-  .section-tick[data-hover-distance="1"] {
-    width: 24px;
-    opacity: 0.8;
-  }
-  .section-tick[data-hover-distance="2"] {
-    width: 18px;
-    opacity: 0.65;
-  }
-  .section-tick[data-hover-distance="3"] {
-    width: 12px;
-    opacity: 0.55;
-  }
-  .section-rail a[aria-current="location"] .section-tick {
-    background: var(--primary);
-    opacity: 1;
-  }
-  .section-rail a:hover .section-tick,
-  .section-rail a:focus-visible .section-tick {
-    background: var(--primary);
-    opacity: 1;
-  }
-  .section-rail a:hover .section-tick[data-hover-distance="0"],
-  .section-rail a:focus-visible .section-tick[data-hover-distance="0"] {
-    width: 33px;
-  }
-  .section-preview {
-    z-index: 30;
-    width: min(400px, calc(100vw - 24px));
-    max-height: calc(100dvh - 24px);
-    overflow-y: auto;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--card);
-    color: var(--card-foreground);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  .section-preview-summary {
-    @apply line-clamp-4;
-  }
-  .section-preview-title {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-  .section-preview-summary {
-    margin: 6px 0 0;
-    color: var(--muted-foreground);
-  }
   .lesson-prose {
     @apply font-serif text-lg leading-[1.75] sm:text-xl;
     min-width: 0;
@@ -352,15 +240,6 @@
   .annotation-body > :last-child,
   .lesson-prose .annotation-body > :last-child {
     margin-bottom: 0;
-  }
-}
-
-@media (min-width: 1000px) {
-  .section-outline {
-    display: none;
-  }
-  .section-rail {
-    display: block;
   }
 }
 
