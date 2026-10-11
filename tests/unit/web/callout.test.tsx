@@ -17,7 +17,7 @@ describe("Callout", () => {
       expect(validateDirectives(document.tree, document.path)).toEqual([]);
       const html = renderToStaticMarkup(<Markdown tree={document.tree} />);
       expect(html).toContain(`data-callout="${kind}"`);
-      expect(html).toContain(`${kind[0]?.toUpperCase()}${kind.slice(1)}`);
+      expect(html).toContain({ note: "提示", tip: "小贴士", warning: "注意" }[kind]);
     },
   );
 
@@ -43,7 +43,7 @@ describe("Callout", () => {
     const html = render(':::callout{kind="tip"}\n\nBody.\n\n:::');
 
     expect(html).toContain('data-callout="tip"');
-    expect(html).toContain("Tip");
+    expect(html).toContain("小贴士");
   });
 
   test("renders nested Markdown inside the callout body", () => {

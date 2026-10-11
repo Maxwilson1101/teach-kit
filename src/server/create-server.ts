@@ -11,7 +11,7 @@ export interface ServerOptions {
 }
 
 const NOT_FOUND =
-  '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page not found · Teach Kit</title><body><h1>Page not found</h1><p>This lesson may be planned or the address may be incorrect.</p><a href="/">Course overview</a></body></html>';
+  '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>页面不存在 · Teach Kit</title><body><h1>页面不存在</h1><p>课程可能尚未撰写，或地址不正确。</p><a href="/">课程概览</a></body></html>';
 
 /** Serves the package-owned prebuilt frontend and reads course content at runtime. */
 export async function createServer({
@@ -74,9 +74,7 @@ export async function createServer({
         if (lessonMatch) {
           const lesson = course.pages.get(lessonMatch[1] ?? "");
           if (!lesson)
-            return isApi
-              ? Response.json({ message: "Lesson not found." }, { status: 404 })
-              : notFound();
+            return isApi ? Response.json({ message: "课程不存在。" }, { status: 404 }) : notFound();
           if (isApi) return Response.json(lesson, { headers: { "Cache-Control": "no-store" } });
         }
         return new Response(html, {

@@ -2,9 +2,9 @@ import { type ReactNode } from "react";
 import { type CalloutKind } from "../../markdown/callout-kind";
 
 const CALLOUT_LABELS: Record<CalloutKind, string> = {
-  note: "Note",
-  tip: "Tip",
-  warning: "Warning",
+  note: "提示",
+  tip: "小贴士",
+  warning: "注意",
 };
 
 const CALLOUT_STYLES: Record<CalloutKind, string> = {

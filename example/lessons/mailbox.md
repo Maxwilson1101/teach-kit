@@ -1,25 +1,25 @@
-## One interface on each chain
+## 每条链上的一个接口
 
-A Mailbox is the protocol entry point for sending and receiving messages. It does not make two chains behave like one synchronous application.
+Mailbox 是发送和接收消息的协议入口。它不会让两条链表现得像一个同步应用。
 
-:::callout{kind="note" title="Read the fields as a boundary"}
-The origin domain and sender identify the remote source. The destination domain and recipient identify the intended receiving environment.
+:::callout{kind="note" title="把字段看作边界"}
+源域和发送者标识远程来源。目标域和接收者标识预期的接收环境。
 :::
 
-## Message identity and duplicate execution
+## 消息身份与重复执行
 
-Messages need stable identities so the receiving flow can distinguish a new delivery from a repeated attempt. Applications must also reason about their own business-level duplicate requests.
+消息需要稳定的身份，以便接收流程区分新的交付和重复尝试。应用还必须处理业务层面的重复请求。
 
-| Question | Protocol concern | Application concern |
+| 问题 | 协议关注点 | 应用关注点 |
 | --- | --- | --- |
-| Was this message already delivered? | Message identity and delivery tracking | Do not confuse a transport retry with a new instruction |
-| Is the remote sender allowed? | Carry the source fields | Validate the expected domain and application |
-| Is this operation legal now? | Invoke the recipient after verification | Enforce business state and permissions |
+| 这条消息已经交付了吗？ | 消息身份和交付跟踪 | 不要把传输重试误认为新指令 |
+| 远程发送者获得许可了吗？ | 携带源字段 | 验证预期的域和应用 |
+| 现在可以执行这个操作吗？ | 验证后调用接收者 | 执行业务状态和权限检查 |
 
-## A short review
+## 简短回顾
 
-:::details{title="Does receiving a message establish every permission?"}
-No. Protocol verification and application authorization remain separate responsibilities.
+:::details{title="接收消息会建立所有权限吗？"}
+不会。协议验证和应用授权仍然是两项独立责任。
 :::
 
-The next planned lesson examines configurable security. It is intentionally not linked until its Markdown body exists.
+下一节计划课程将考察可配置的安全机制。在对应 Markdown 正文创建前，它会有意保持未链接状态。

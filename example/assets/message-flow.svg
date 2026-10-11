@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="180" viewBox="0 0 760 180" role="img" aria-labelledby="title desc">
-  <title id="title">Message delivery roles</title>
-  <desc id="desc">A sending application, a relayer, and a receiving application act across separate chains. The destination checks verification and authorization.</desc>
+  <title id="title">消息交付角色</title>
+  <desc id="desc">发送应用、中继器和接收应用在不同链上协作。目标链负责检查验证结果和授权。</desc>
   <rect width="760" height="180" rx="14" fill="#edf2ff"/>
   <g font-family="system-ui, sans-serif" text-anchor="middle">
     <g fill="#fff" stroke="#abbde8">
@@ -9,14 +9,14 @@
       <rect x="536" y="35" width="205" height="108" rx="10"/>
     </g>
     <g fill="#17243a" font-size="19" font-weight="600">
-      <text x="122" y="78">Source application</text>
-      <text x="380" y="78">Relayer</text>
-      <text x="638" y="78">Destination</text>
+      <text x="122" y="78">源应用</text>
+      <text x="380" y="78">中继器</text>
+      <text x="638" y="78">目标应用</text>
     </g>
     <g fill="#53627a" font-size="14">
-      <text x="122" y="111">Send a message</text>
-      <text x="380" y="111">Transport and submit</text>
-      <text x="638" y="111">Verify, then authorize</text>
+      <text x="122" y="111">发送消息</text>
+      <text x="380" y="111">传输并提交</text>
+      <text x="638" y="111">验证后授权</text>
     </g>
     <g fill="#3158c9" font-size="28">
       <text x="252" y="96">→</text>

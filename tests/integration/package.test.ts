@@ -125,10 +125,10 @@ assert.match(tabs, /Installed panel/);
         expect(await page.getByRole("link", { name: /Planned/ }).count()).toBe(0);
         await page.getByRole("link", { name: /Ready/ }).click();
         await page.getByText("Body.", { exact: true }).waitFor();
-        const sections = page.getByRole("navigation", { name: "Section navigation", exact: true });
+        const sections = page.getByRole("navigation", { name: "章节导航", exact: true });
         await sections.waitFor();
         if (viewport.width < 1000) {
-          await sections.getByRole("button", { name: "On this page" }).click();
+          await sections.getByRole("button", { name: "本页内容" }).click();
         }
         await sections.getByRole("link", { name: "Ready", exact: true }).click();
         await page.waitForURL(/#ready$/);

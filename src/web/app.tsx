@@ -14,7 +14,7 @@ import "./styles/globals.css";
 async function readJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.message ?? "The course could not be loaded.");
+  if (!response.ok) throw new Error(data.message ?? "无法加载课程内容。");
   return data as T;
 }
 
@@ -26,7 +26,7 @@ function Neighbor({ lesson, label }: { lesson: LessonOverview | undefined; label
       <span className="mt-2 block text-base font-semibold leading-snug">{lesson.title}</span>
       {lesson.status === "planned" && (
         <Badge variant="outline" className="mt-3">
-          Planned
+          计划中
         </Badge>
       )}
     </>
@@ -55,7 +55,7 @@ export function CourseView({
   return (
     <>
       <a href={`#${MAIN_CONTENT_ID}`} className="skip-link">
-        Skip to content
+        跳转到正文
       </a>
       <header className="site-header">
         <div className="mx-auto flex min-h-18 max-w-6xl items-center justify-between gap-4 px-6 sm:px-10">
@@ -67,10 +67,10 @@ export function CourseView({
           </a>
           {lesson ? (
             <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
-              <a href="/">Course overview</a>
+              <a href="/">课程概览</a>
             </Button>
           ) : (
-            <span className="text-xs text-muted-foreground sm:text-sm">Course notes</span>
+            <span className="text-xs text-muted-foreground sm:text-sm">课程笔记</span>
           )}
         </div>
       </header>
@@ -82,8 +82,8 @@ export function CourseView({
         <div className="reading-heading">
           <p className="mb-5 text-sm text-muted-foreground">
             {lesson
-              ? `${course.title} · Lesson ${String(lessonIndex + 1).padStart(2, "0")}`
-              : "A course, one lesson at a time"}
+              ? `${course.title} · 第 ${String(lessonIndex + 1).padStart(2, "0")} 课`
+              : "一课一课地学习"}
           </p>
           <h1 className={lesson ? "lesson-title" : "course-title"}>
             {lesson?.title ?? course.title}
@@ -95,18 +95,18 @@ export function CourseView({
             {lesson ? (
               <>
                 <span>
-                  Lesson {lessonIndex + 1} of {course.lessons.length}
+                  第 {lessonIndex + 1} 课，共 {course.lessons.length} 课
                 </span>
                 <span aria-hidden="true">·</span>
-                <span>Course notes</span>
+                <span>课程笔记</span>
               </>
             ) : (
               <>
-                <span>{course.lessons.length} lessons</span>
+                <span>{course.lessons.length} 课</span>
                 <span aria-hidden="true">·</span>
-                <span>{available} available</span>
+                <span>{available} 已完成</span>
                 <span aria-hidden="true">·</span>
-                <span>{course.lessons.length - available} planned</span>
+                <span>{course.lessons.length - available} 计划中</span>
               </>
             )}
           </div>
@@ -118,25 +118,25 @@ export function CourseView({
               <Markdown tree={page.tree} />
             </article>
             <nav
-              aria-label="Lesson navigation"
+              aria-label="课程导航"
               className="mt-14 grid gap-4 border-t pt-4 sm:grid-cols-2 sm:gap-10"
             >
-              <Neighbor lesson={course.lessons[lessonIndex - 1]} label="Previous lesson" />
-              <Neighbor lesson={course.lessons[lessonIndex + 1]} label="Next lesson" />
+              <Neighbor lesson={course.lessons[lessonIndex - 1]} label="上一课" />
+              <Neighbor lesson={course.lessons[lessonIndex + 1]} label="下一课" />
             </nav>
           </>
         ) : (
           <section aria-labelledby="learning-route">
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-5">
               <h2 id="learning-route" className="text-base font-semibold">
-                Learning route
+                学习路线
               </h2>
               <p className="text-xs text-muted-foreground">
-                Read in order; unwritten lessons stay in the plan.
+                按顺序阅读；尚未撰写的课程仍保留在计划中。
               </p>
             </div>
             {course.lessons.length === 0 && (
-              <p className="py-10 text-muted-foreground">No lessons have been planned yet.</p>
+              <p className="py-10 text-muted-foreground">还没有规划课程。</p>
             )}
             <ol>
               {course.lessons.map((item, index) => (
@@ -146,12 +146,12 @@ export function CourseView({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Lesson {String(index + 1).padStart(2, "0")}</span>
+                      <span>第 {String(index + 1).padStart(2, "0")} 课</span>
                       <Badge
                         variant={item.status === "generated" ? "secondary" : "outline"}
                         className="text-[11px] font-normal"
                       >
-                        {item.status === "generated" ? "Available" : "Planned"}
+                        {item.status === "generated" ? "已完成" : "计划中"}
                       </Badge>
                     </div>
                     <h3 className="text-xl font-bold leading-snug tracking-tight sm:text-2xl">
@@ -178,7 +178,7 @@ export function CourseView({
       >
         <div className="flex flex-wrap justify-between gap-3 border-t pt-6">
           <span>{course.title}</span>
-          <span>Teach Kit · Local preview</span>
+          <span>Teach Kit · 本地预览</span>
         </div>
       </footer>
     </>
@@ -221,19 +221,19 @@ export function App() {
   if (error)
     return (
       <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-2xl font-semibold">Course content could not be loaded</h1>
+        <h1 className="text-2xl font-semibold">无法加载课程内容</h1>
         <p role="alert" className="mt-4 whitespace-pre-wrap break-words text-destructive">
           {error}
         </p>
         <Button asChild variant="link" className="mt-4 px-0">
-          <a href="/">Course overview</a>
+          <a href="/">课程概览</a>
         </Button>
       </main>
     );
   if (!state)
     return (
       <main className="mx-auto max-w-3xl px-6 py-16" role="status">
-        Loading course…
+        正在加载课程…
       </main>
     );
   return (

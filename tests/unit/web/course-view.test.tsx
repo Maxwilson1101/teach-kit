@@ -6,7 +6,7 @@ test("renders an empty plan without placeholder lesson links", () => {
   const html = renderToStaticMarkup(
     <CourseView course={{ title: "Empty", description: "A blank course.", lessons: [] }} />,
   );
-  expect(html).toContain("No lessons have been planned yet.");
+  expect(html).toContain("还没有规划课程。");
   expect(html).not.toContain('href="/lessons/');
 });
 
@@ -69,8 +69,8 @@ test("keeps long metadata as escaped text and never links planned neighbors", ()
     />,
   );
   expect(html).toContain("&lt;script&gt;");
-  expect(html).toContain("Previous lesson");
-  expect(html).toContain("Next lesson");
+  expect(html).toContain("上一课");
+  expect(html).toContain("下一课");
   expect(html).not.toContain('href="/lessons/before"');
   expect(html).not.toContain('href="/lessons/after"');
 });

@@ -1,87 +1,87 @@
-## Transport is not verification
+## 传输不等于验证
 
-Hyperlane is a cross-chain messaging protocol. An application on one chain sends a message; an application on another chain decides whether to accept it and what to do with it.
+Hyperlane 是一个跨链消息协议。一条链上的应用发送消息，另一条链上的应用决定是否接受消息以及如何处理它。
 
-:::callout{kind="note" title="The essential distinction"}
-**A relayer transports a message. A security module verifies it.** Transporting a message does not grant authority to decide whether the message is authentic.
+:::callout{kind="note" title="关键区别"}
+**中继器负责传输消息，安全模块负责验证消息。** 传输消息并不会赋予中继器判断消息是否真实的权限。
 :::
 
-A token bridge is one possible application of this messaging layer. The protocol does not move a token object between chains: applications change local state in response to messages.
+代币桥是这类消息层的一种应用。协议并不会把代币对象搬到另一条链上，而是由应用根据消息改变本地状态。
 
-## Follow one message
+## 跟随一条消息
 
-![Message delivery roles](assets/message-flow.svg)
+![消息交付角色](assets/message-flow.svg)
 
-1. The sending application asks its local Mailbox to dispatch a message.
-2. A relayer observes the source chain and collects the required verification material.
-3. The relayer submits the message to the destination Mailbox.
-4. The destination Mailbox asks the selected security module to verify the message.
-5. After verification, the receiving application checks authorization and applies its business rules.
+1. 发送应用请求本地 Mailbox 分发消息。
+2. 中继器观察源链，并收集所需的验证材料。
+3. 中继器将消息提交给目标 Mailbox。
+4. 目标 Mailbox 请求选定的安全模块验证消息。
+5. 验证完成后，接收应用检查授权并执行自己的业务规则。
 
-| Participant | Responsibility | Boundary |
+| 参与者 | 责任 | 边界 |
 | --- | --- | --- |
-| Sending application | Create a business instruction | Cannot execute a destination transaction directly |
-| Relayer | Carry the message and verification material | Does not choose the receiving application's trust rules |
-| Security module | Evaluate the selected acceptance rules | Does not automatically authorize every business operation |
-| Receiving application | Interpret the message and update state | Must protect its own entry point and permissions |
+| 发送应用 | 创建业务指令 | 不能直接执行目标链交易 |
+| 中继器 | 携带消息和验证材料 | 不选择接收应用的信任规则 |
+| 安全模块 | 根据选定规则评估消息 | 不会自动授权所有业务操作 |
+| 接收应用 | 解释消息并更新状态 | 必须保护自己的入口和权限 |
 
-## Two different questions
+## 两个不同的问题
 
 ::::tabs
-:::tab{title="Transport"}
-The relayer brings the message and verification material to the destination chain. Other participants may also submit a valid message.
+:::tab{title="传输"}
+中继器将消息和验证材料带到目标链。其他参与者也可能提交有效消息。
 :::
-:::tab{title="Verification"}
-The receiving application chooses the acceptance rules.
+:::tab{title="验证"}
+接收应用选择消息的接受规则。
 :::
 ::::
 
-Permissionless submission does not imply unconditional delivery. A message can remain undelivered if nobody is willing or able to submit it.
+无需许可的提交并不意味着消息一定会交付。如果没有人愿意或能够提交消息，消息仍可能无法交付。
 
-:::callout{kind="warning" title="Sending success is not receiving success"}
-The source and destination actions normally occur in separate transactions. A destination failure does not automatically undo a confirmed source transaction.
+:::callout{kind="warning" title="发送成功不等于接收成功"}
+源链和目标链的操作通常发生在不同交易中。目标链失败不会自动撤销已经确认的源链交易。
 :::
 
-## Authenticity is not authorization
+## 真实性不等于授权
 
-An attacker can send a real message on the source chain. Proving that this message was sent does not prove that its requested business operation is permitted.
+攻击者可以在源链上发送一条真实消息。证明消息确实由源链发送，并不能证明它请求的业务操作获得了许可。
 
 ::::columns
 :::column
-### Protocol acceptance
+### 协议接受
 
-The selected security module checks the message against its trust assumptions. The strength of this check depends on the actual module, configuration, and implementation.
+选定的安全模块会根据自己的信任假设检查消息。检查强度取决于实际使用的模块、配置和实现。
 :::
 :::column
-### Application authorization
+### 应用授权
 
-The receiving application checks the local caller, the remote domain and sender, and the requested state transition. These checks remain necessary even for an authentic message.
+接收应用会检查本地调用者、远程域和发送者，以及请求的状态转换。即使消息真实，这些检查仍然不可缺少。
 :::
 ::::
 
-## Check your understanding
+## 检查理解
 
-Try answering before opening each explanation.
+请先尝试回答，再展开解释。
 
-:::details{title="Who is the sender when a wallet calls a sending application?"}
-The sending application, not the user's wallet.
+:::details{title="钱包调用发送应用时，谁是发送者？"}
+发送应用，而不是用户的钱包。
 :::
 
-:::details{title="Does a destination failure roll back the source transaction?"}
-No. Cross-chain execution is not one atomic transaction. Recovery or compensation must be designed by the application.
+:::details{title="目标链失败会回滚源链交易吗？"}
+不会。跨链执行不是一笔原子交易。恢复或补偿机制必须由应用设计。
 :::
 
-:::details{title="Why might a verified message still be rejected?"}
-The remote sender may not be authorized, or the requested operation may violate a business rule.
+:::details{title="验证通过的消息为什么仍可能被拒绝？"}
+远程发送者可能没有授权，或者请求的操作违反了业务规则。
 :::
 
-:::callout{kind="tip" title="What to remember"}
-Keep three responsibilities separate: **transport**, **verification**, and **application authorization**.
+:::callout{kind="tip" title="请记住"}
+请区分三种责任：**传输**、**验证**和**应用授权**。
 :::
 
-## Further reading
+## 延伸阅读
 
 - [Hyperlane protocol overview](https://docs.hyperlane.xyz/docs/protocol/protocol-overview)
 - [Mailbox documentation](https://docs.hyperlane.xyz/docs/protocol/core/mailbox)
 
-These notes are an introductory model, not a protocol specification. Check the deployed configuration and the matching source version before making security claims.
+这些笔记是入门模型，不是协议规范。在作出安全判断前，请检查已部署的配置和对应的源码版本。

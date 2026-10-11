@@ -1,6 +1,6 @@
 # Teach Kit
 
-Teach Kit is a Bun package for turning Markdown lessons into a local course preview. It is designed for teaching agents: plan a course in TypeScript, write lessons in Markdown, and verify the reading experience with Playwright.
+Teach Kit 是一个 Bun 软件包，可以把 Markdown 课程渲染为本地预览。你可以用 TypeScript 规划课程、用 Markdown 编写正文，并用 Playwright 验证阅读体验。预览页面、课程示例和内置界面默认使用中文展示。
 
 ## Status
 
@@ -23,7 +23,7 @@ Offline HTML export, multi-course management, learning progress, executable note
 
 ## Consumer Experience
 
-The overview lists every configured lesson in order. Valid lesson bodies are available; missing bodies stay visibly planned without links. Lesson pages provide a course-overview link and the immediately previous and next items in the plan. Planned neighbors are shown as information, not skipped or linked.
+课程概览按顺序列出所有已配置课程。正文有效的课程可以阅读；缺少正文的课程会显示为“计划中”，且不提供链接。课程页面提供返回课程概览的入口，以及计划中紧邻的上一课和下一课。尚未撰写的相邻课程只展示信息，不会跳过或链接。
 
 ### Project Layout
 
@@ -44,18 +44,18 @@ my-course/
 import { defineCourse } from "teach-kit";
 
 export default defineCourse({
-  title: "Hyperlane Protocol Study",
-  description: "Understand message delivery, security boundaries, and application authorization.",
+  title: "Hyperlane 协议学习",
+  description: "理解消息交付、安全边界和应用授权。",
   lessons: [
     {
       id: "message-lifecycle",
-      title: "Message Lifecycle",
-      description: "Distinguish message transport from verification.",
+      title: "消息生命周期",
+      description: "区分消息传输和验证。",
     },
     {
       id: "mailbox",
-      title: "Mailbox and Message Format",
-      description: "Understand dispatch, process, and message identifiers.",
+      title: "Mailbox 与消息格式",
+      description: "理解消息分发、处理和消息标识符。",
     },
   ],
 });
@@ -69,23 +69,23 @@ Course configuration imports follow Bun's module cache; restart the preview proc
 
 A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. The shared pipeline in `src/markdown/` parses lesson sources into an AST, derives level-two sections with unique anchors and plain-text summaries, and validates links and local images. Raw HTML is reported as a located error rather than rendered. Links may use `http`, `https`, or `mailto` protocols, relative paths, or anchors; any other protocol is rejected. Images are local course assets only: remote, absolute, and escaping paths are errors, and a missing asset file is an error. The low-level loader does not parse Markdown; `check` and the page server consume the shared pipeline. The pipeline parses container directives and validates them against a fixed allowlist, and the React renderer turns callouts, details, tabs, and two-column layouts into components on real lesson pages. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
 
-### Lesson Authoring
+### 编写课程
 
 ```md
-## Transport and Verification
+## 传输与验证
 
-Relayers transport messages; security modules verify them.
+中继器传输消息，安全模块验证消息。
 
-:::callout{kind="warning" title="Keep These Guarantees Separate"}
-Successful dispatch does not imply successful execution on the destination chain.
+:::callout{kind="warning" title="区分这些保证"}
+成功分发并不意味着目标链执行成功。
 :::
 
-## Check Your Understanding
+## 检查理解
 
-Does a failed destination transaction automatically revert the source transaction?
+目标链交易失败会自动回滚源链交易吗？
 
-:::details{title="Show Answer"}
-No. They are separate transactions on different chains.
+:::details{title="显示答案"}
+不会。这是发生在不同链上的两笔独立交易。
 :::
 ```
 
@@ -108,13 +108,13 @@ Preview summaries use the first non-empty paragraph, including paragraphs in lis
 
 On desktop, the left section rail provides native anchor links. Hover or focus a link to preview its title and summary; moving into the preview keeps it open. Escape dismisses the preview without moving focus. Long titles wrap, summaries are visually shortened, and previews remain within the viewport. Floating UI handles non-modal hover/focus interactions and collision-aware positioning; the package owns the content and styling. The current section follows heading positions as you scroll, including after disclosures change the article height. Before the first section there is no current item; at the document bottom the final section is current. Selecting a section updates the URL fragment and focuses its heading. Ordinary scrolling does not rewrite the URL or add history entries; native fragment links preserve browser Back/Forward navigation.
 
-Below 1000px, where the centered article and side gutter no longer fit together, an **On this page** button expands a non-modal outline before the article. Select a link with touch, pointer, or Enter to collapse the outline and focus its heading. Escape collapses the outline and returns focus to the button; Tab can leave the outline normally. Long lists scroll within the outline or desktop rail. Lessons without root-level sections have no navigation control. Layout changes and lesson navigation reset open previews and outline state. Section jumps do not force smooth scrolling.
+视口宽度小于 1000px 时，文章前会显示“本页内容”按钮，展开章节目录。使用触摸、指针或 Enter 选择链接后，目录会收起并将焦点移到对应标题。按 Escape 可收起目录并将焦点还给按钮；也可以正常按 Tab 离开目录。长目录可在目录区域或桌面章节栏内滚动。没有顶层章节的课程不会显示导航控件。切换布局或课程会重置预览和目录状态；跳转章节时不强制平滑滚动。
 
 Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
 
 The internal Markdown modules separate parsing, section metadata, resource validation, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Standard Markdown rendering reuses `mdast-util-to-hast` and `hast-util-to-jsx-runtime`, consuming the existing mdast tree without parsing the source again. A small adapter maps teaching directives to React components; raw HTML, footnotes, and unsupported nodes remain disabled. Code text is preserved without adding a trailing newline. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
 
-### Installation and Commands
+### 安装与命令
 
 Build and pack this repository, then install the resulting artifact in an independent course project:
 
@@ -151,7 +151,7 @@ PORT=4325 bun run dev /absolute/path/to/course/index.ts
 
 Invalid configuration or lesson content produces a nonzero exit code with actionable diagnostics. Missing lesson bodies are valid planned content. Unknown and planned lesson URLs return HTTP 404. `PORT` must be an integer between 0 and 65535; 0 requests an available port. SIGINT and SIGTERM shut down the preview cleanly. Edit Markdown or assets and refresh to see changes; restart after configuration changes. No hot-reload system is provided.
 
-## Repository Layout
+## 仓库结构
 
 ```text
 src/
@@ -182,7 +182,7 @@ All test files live under `tests/`: unit tests in `tests/unit/`, integration tes
 
 Course content is read at runtime, while the package frontend is built in advance. Package installation tests use an actual packed artifact in an independent project, including CLI validation and desktop/narrow-screen browser navigation.
 
-## Development
+## 开发
 
 Install dependencies and preview the example (the command builds the package first):
 
@@ -215,7 +215,7 @@ Type checking also rejects unused locals and parameters, missing return paths, a
 
 Playwright covers desktop and narrow-screen Chromium. Browser downloads are needed once per environment. The main preview on port 4322 exercises the real example; a test-only preview on port 4323 exercises the renderer and components independently. The packed-package integration test installs the artifact in a temporary consumer, validates public types, starts its installed CLI, opens the overview and a lesson in Chromium, and verifies desktop/narrow-screen section jumps, Markdown refresh, and process cleanup. Generated build output and test reports are ignored by Git.
 
-### Theme and Components
+### 主题与组件
 
 `components.json` configures shadcn for React, Tailwind v4, CSS variables, and the `@/` source alias. Registry components live in `src/web/components/ui/`; pages compose Badge and Button without duplicating their primitives. Course items use subtle dividing rules, and lessons render as continuous articles rather than section cards. `src/web/lib/utils.ts` provides the standard `clsx` + `tailwind-merge` utility. Existing accessible tabs remain backed by Radix; disclosures use native HTML semantics.
 
@@ -231,7 +231,7 @@ Development follows TDD:
 
 Use English Conventional Commit messages. Keep unrelated cleanup and features separate, and do not commit intermediate failing states. All repository file content is written in English except `PLAN.md`, which is written in Chinese; existing visual reference assets are preserved.
 
-## Agent Workflow
+## 教学工作流
 
 The intended teaching workflow is:
 
