@@ -1,8 +1,9 @@
 /**
- * Renders the shared Markdown AST through HAST and the React JSX runtime.
- * Callers must reject parsing, directive, and resource errors before rendering.
- * Conversion does not mutate the shared tree, assign anchors, or rewrite asset URLs.
- * Raw HTML, footnotes, and unsupported directives are not rendered.
+ * Renders the shared Markdown AST through HAST and the React JSX runtime, with
+ * syntax-highlighted code and KaTeX-rendered math. Callers must reject parsing,
+ * directive, math, and resource errors before rendering. Conversion does not
+ * mutate the shared tree, assign anchors, or rewrite asset URLs. Raw HTML,
+ * footnotes, and unsupported directives are not rendered.
  */
 
 import { type Element, type Nodes as HastNodes, type Root as HastRoot } from "hast";
@@ -13,6 +14,7 @@ import { type InlineMath, type Math as MathNode } from "mdast-util-math";
 import { defaultHandlers, toHast } from "mdast-util-to-hast";
 import { type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import { unified } from "unified";
 import { isCalloutKind } from "../markdown/callout-kind";
@@ -85,11 +87,13 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
       },
     });
 
-  // Math inside directive containers is converted separately, so every subtree
-  // runs through the same KaTeX transform as the document root.
-  const katex = unified().use(rehypeKatex, { strict: MATH_STRICT });
-  const renderMath = (hast: HastNodes): ReactNode =>
-    renderHast(katex.runSync(hast as HastRoot) as unknown as HastNodes);
+  // Directive subtrees are converted separately, so every subtree runs through
+  // the same syntax highlight and KaTeX transforms as the document root.
+  const processor = unified()
+    .use(rehypeHighlight, { detect: false })
+    .use(rehypeKatex, { strict: MATH_STRICT });
+  const renderSubtree = (hast: HastNodes): ReactNode =>
+    renderHast(processor.runSync(hast as HastRoot) as unknown as HastNodes);
 
   const hast = toHast(tree, {
     allowDangerousHtml: false,
@@ -125,7 +129,7 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
       },
       containerDirective(state, node: ContainerDirective) {
         const content = renderDirective(node, (child) =>
-          renderMath({ type: "root", children: state.all(child) }),
+          renderSubtree({ type: "root", children: state.all(child) }),
         );
         if (content === null) return undefined;
         const placeholder: Element = {
@@ -140,5 +144,5 @@ export function Markdown({ tree }: { tree: Root }): ReactNode {
     },
   });
 
-  return renderMath(hast);
+  return renderSubtree(hast);
 }

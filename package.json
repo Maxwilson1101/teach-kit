@@ -46,6 +46,7 @@
     "mdast-util-to-string": "^4.0.0",
     "react": "^19",
     "react-dom": "^19",
+    "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "remark-directive": "^4.0.0",
     "remark-gfm": "^4.0.1",

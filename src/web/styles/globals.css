@@ -275,6 +275,45 @@
   .lesson-prose pre code {
     @apply bg-transparent p-0;
   }
+  .lesson-prose .hljs {
+    color: var(--foreground);
+  }
+  .lesson-prose .hljs-comment,
+  .lesson-prose .hljs-quote {
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .lesson-prose .hljs-keyword,
+  .lesson-prose .hljs-selector-tag,
+  .lesson-prose .hljs-literal,
+  .lesson-prose .hljs-built_in,
+  .lesson-prose .hljs-type,
+  .lesson-prose .hljs-name,
+  .lesson-prose .hljs-tag {
+    color: var(--primary);
+  }
+  .lesson-prose .hljs-string,
+  .lesson-prose .hljs-attr,
+  .lesson-prose .hljs-attribute,
+  .lesson-prose .hljs-symbol,
+  .lesson-prose .hljs-bullet,
+  .lesson-prose .hljs-regexp,
+  .lesson-prose .hljs-addition {
+    color: var(--warning-foreground);
+  }
+  .lesson-prose .hljs-number,
+  .lesson-prose .hljs-meta,
+  .lesson-prose .hljs-link {
+    color: var(--destructive);
+  }
+  .lesson-prose .hljs-title,
+  .lesson-prose .hljs-section {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  .lesson-prose .hljs-deletion {
+    color: var(--destructive);
+  }
   .lesson-prose .table-scroll {
     @apply my-8 overflow-x-auto;
   }

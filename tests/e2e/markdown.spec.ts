@@ -69,3 +69,15 @@ test("renders inline and display math with KaTeX without overflow", async ({ pag
   expect(errors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("math.png"), fullPage: true });
 });
+
+test("highlights fenced code with the lesson token colors", async ({ page }, testInfo) => {
+  await openNavigationLesson(
+    page,
+    ["## Snippet", "", "```ts", "const answer: number = 42;", "```"].join("\n"),
+  );
+
+  const keyword = page.locator(".lesson-prose .hljs-keyword").first();
+  await expect(keyword).toHaveText("const");
+  await expect(keyword).toHaveCSS("color", "rgb(24, 115, 60)");
+  await page.screenshot({ path: testInfo.outputPath("code.png"), fullPage: true });
+});

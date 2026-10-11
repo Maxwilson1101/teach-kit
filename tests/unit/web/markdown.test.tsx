@@ -44,14 +44,23 @@ describe("Markdown", () => {
     expect(render("3. Third\n4. Fourth")).toContain('<ol start="3">');
   });
 
-  test("renders fenced code with its language", () => {
-    const html = render("```js\ncode()\n```");
+  test("highlights fenced code with its language", () => {
+    const html = render("```js\nconst answer = 42;\n```");
 
-    expect(html).toContain('<pre><code class="language-js">code()</code></pre>');
+    expect(html).toContain('class="hljs language-js"');
+    expect(html).toContain('class="hljs-keyword"');
+    expect(html).toContain('class="hljs-number"');
   });
 
   test("renders fenced code without a language", () => {
     expect(render("```\nplain\n```")).toContain("<pre><code>plain</code></pre>");
+  });
+
+  test("keeps code in an unknown language as plain text", () => {
+    const html = render("```notalanguage\nplain text\n```");
+
+    expect(html).toContain('<code class="hljs language-notalanguage">plain text</code>');
+    expect(html).not.toContain("hljs-keyword");
   });
 
   test("renders inline and display math through KaTeX", () => {
@@ -66,6 +75,16 @@ describe("Markdown", () => {
     const html = render([':::callout{kind="note"}', "", "Value $x^2$.", "", ":::"].join("\n"));
     expect(html).toContain('class="katex"');
     expect(html).not.toContain("math-inline");
+  });
+
+  test("highlights code nested inside directive containers", () => {
+    const html = render(
+      [':::details{title="Snippet"}', "", "```js", "const answer = 42;", "```", "", ":::"].join(
+        "\n",
+      ),
+    );
+
+    expect(html).toContain('class="hljs language-js"');
   });
 
   test("renders a GFM table with header cells and alignment", () => {
