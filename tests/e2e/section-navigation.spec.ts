@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { openNavigationLesson } from "../helpers/navigation-page";
 
@@ -8,7 +9,7 @@ const titles = [
   "Authenticity is not authorization",
   "Check your understanding",
   "Further reading",
-];
+] as const;
 
 test("offers ordered desktop anchor links and focuses headings on pointer and keyboard jumps", async ({
   page,
@@ -134,4 +135,86 @@ test("bounds long previews and keeps first and last links reachable in a short v
   await expect(preview).toHaveText("Section 40");
   await assertBounds();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("tracks scrolling, introduction and a short last section without writing URL history", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
+  await page.goto("/lessons/message-lifecycle");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const current = navigation.locator('[aria-current="location"]');
+  await expect(navigation).toBeVisible();
+  await expect(current).toHaveCount(0);
+  const historyLength = await page.evaluate(() => history.length);
+  await page
+    .locator("#authenticity-is-not-authorization")
+    .evaluate((heading) => heading.scrollIntoView());
+  await expect(current).toHaveAccessibleName(titles[3] ?? "");
+  await navigation.getByRole("link", { name: titles[1], exact: true }).hover();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await expect(current).toHaveAccessibleName(titles[3] ?? "");
+  await page.locator("#follow-one-message").evaluate((heading) => heading.scrollIntoView());
+  await expect(current).toHaveAccessibleName(titles[1] ?? "");
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(current).toHaveAccessibleName(titles[5] ?? "");
+  await expect(page).toHaveURL(/\/lessons\/message-lifecycle$/);
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(current).toHaveCount(0);
+});
+
+test("restores active deep links through history and tolerates missing fragments", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/lessons/message-lifecycle#follow-one-message");
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const current = navigation.locator('[aria-current="location"]');
+  await expect(current).toHaveAccessibleName(titles[1] ?? "");
+  await navigation.getByRole("link", { name: titles[3], exact: true }).click();
+  await expect(current).toHaveAccessibleName(titles[3] ?? "");
+  await page.goBack();
+  await expect(page).toHaveURL(/#follow-one-message$/);
+  await expect(current).toHaveAccessibleName(titles[1] ?? "");
+  await page.goForward();
+  await expect(page).toHaveURL(/#authenticity-is-not-authorization$/);
+  await expect(current).toHaveAccessibleName(titles[3] ?? "");
+  await page.goto("/");
+  await page.goto("/lessons/message-lifecycle#missing-heading");
+  await expect(navigation).toBeVisible();
+  await expect(current).toHaveCount(0);
+  await page.goto("/");
+  await page.goto("/lessons/message-lifecycle#%zz");
+  await expect(navigation).toBeVisible();
+  await expect(current).toHaveCount(0);
+  await page.getByRole("link", { name: "Course overview", exact: true }).click();
+  await expect(navigation).toHaveCount(0);
+  await page.getByRole("link", { name: /Protocol model and message lifecycle/ }).click();
+  await expect(navigation).toBeVisible();
+  await expect(current).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("recalculates the active section after disclosure layout changes without scrolling", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "The rail needs a desktop gutter.");
+  const source = await readFile(new URL("../fixtures/navigation.md", import.meta.url), "utf8");
+  await page.setViewportSize({ width: 1280, height: 360 });
+  await openNavigationLesson(page, source);
+  // Isolate position changes from the browser's automatic scroll anchoring.
+  await page.addStyleTag({ content: "html { overflow-anchor: none; }" });
+  const navigation = page.getByRole("navigation", { name: "Section navigation", exact: true });
+  const current = navigation.locator('[aria-current="location"]');
+  await page.locator("#second").evaluate((heading) => heading.scrollIntoView());
+  await expect(current).toHaveAccessibleName("Second");
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await page.locator("details").evaluate((details: HTMLDetailsElement) => {
+    details.open = true;
+  });
+  await expect(current).toHaveAccessibleName("First");
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
 });

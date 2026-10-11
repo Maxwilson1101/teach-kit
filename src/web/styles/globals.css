@@ -133,6 +133,11 @@
     background: var(--muted-foreground);
     opacity: 0.45;
   }
+  .section-rail a[aria-current="location"] .section-tick {
+    background: var(--primary);
+    opacity: 1;
+    width: 20px;
+  }
   .section-rail a:hover .section-tick,
   .section-rail a:focus-visible .section-tick {
     background: var(--primary);

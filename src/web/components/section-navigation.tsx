@@ -14,6 +14,7 @@ import {
 } from "@floating-ui/react";
 import { type Dispatch, type MouseEvent, type SetStateAction, useEffect, useState } from "react";
 import { type MarkdownSection } from "../../markdown/sections";
+import { useActiveSection } from "../hooks/use-active-section";
 
 /** Preserve native fragment navigation and history while moving focus into the article. */
 function focusHeading(event: MouseEvent<HTMLAnchorElement>, id: string) {
@@ -29,11 +30,13 @@ function focusHeading(event: MouseEvent<HTMLAnchorElement>, id: string) {
 function SectionLink({
   section,
   index,
+  active,
   openId,
   setOpenId,
 }: {
   section: MarkdownSection;
   index: number;
+  active: boolean;
   openId: string | null;
   setOpenId: Dispatch<SetStateAction<string | null>>;
 }) {
@@ -71,6 +74,7 @@ function SectionLink({
       <a
         ref={refs.setReference}
         href={`#${section.id}`}
+        aria-current={active ? "location" : undefined}
         {...getReferenceProps({
           onClick: (event: MouseEvent<HTMLAnchorElement>) => focusHeading(event, section.id),
         })}
@@ -97,6 +101,7 @@ function SectionLink({
 
 export function SectionNavigation({ sections }: { sections: readonly MarkdownSection[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const activeId = useActiveSection(sections);
   useEffect(() => {
     const close = () => setOpenId(null);
     window.addEventListener("resize", close);
@@ -111,6 +116,7 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
             key={section.id}
             section={section}
             index={index}
+            active={activeId === section.id}
             openId={openId}
             setOpenId={setOpenId}
           />
