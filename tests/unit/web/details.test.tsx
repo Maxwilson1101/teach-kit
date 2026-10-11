@@ -16,7 +16,8 @@ describe("Details", () => {
     expect(html).toContain("<summary");
     expect(html).toContain("Show Answer");
     expect(html).toContain("The answer.");
-    expect(html).not.toContain("open");
+    const detailsTag = html.match(/<details[^>]*>/)?.[0] ?? "";
+    expect(detailsTag).not.toContain("open");
   });
 
   test("renders nested Markdown in the disclosure body", () => {
