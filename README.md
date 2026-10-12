@@ -1,29 +1,22 @@
 # Teach Kit
 
-Teach Kit 是一个 Bun 软件包，可以把 Markdown 课程渲染为本地预览。你可以用 TypeScript 规划课程、用 Markdown 编写正文，并用 Playwright 验证阅读体验。预览页面、课程示例和内置界面默认使用中文展示。
+Teach Kit is a Bun package that renders Markdown courses as a local preview. You plan a course in TypeScript, write lesson bodies in Markdown, and verify the reading experience in a browser. The frontend is prebuilt, so consumers need no React or Tailwind configuration; the preview UI and example course are shown in Chinese by default.
 
-## Status
+## Quick Start
 
-Typed course configuration, runtime content loading, shared Markdown validation, teaching components, the course overview, lesson pages, and the `dev` / `check` CLI are implemented. The package ships a prebuilt React frontend with a shadcn-managed, Medium-inspired light reading theme. Section-rail navigation, hover/focus previews, active-section tracking, and a narrow-screen outline are implemented. Syntax highlighting, KaTeX-rendered math, and server-rendered Mermaid diagrams are also implemented. The package name is provisional; it is not published yet.
+Install the package into a course project:
 
-## MVP Scope
+```bash
+bun add teach-kit
+```
 
-- One consuming project represents one course.
-- A typed root `index.ts` defines the course and ordered lesson plan.
-- Markdown files in `lessons/` provide lesson bodies; `assets/` holds course resources.
-- A dedicated course index shows both generated and planned lessons.
-- Lesson pages include a compact section rail with hover/focus previews, anchor navigation, and active-section tracking.
-- Restricted Markdown directives provide callouts, disclosures, and tabs.
-- Standard Markdown, syntax-highlighted code, math, and Mermaid diagrams support teaching content.
-- A local preview server provides the reading experience; Playwright verifies browser behavior and layout.
+Until the package is published under its final name, install a packed artifact instead:
 
-Offline HTML export, multi-course management, learning progress, executable notebooks, and arbitrary JSX or custom CSS authoring are outside the MVP.
+```bash
+bun add /absolute/path/to/teach-kit/teach-kit.tgz
+```
 
-## Consumer Experience
-
-课程概览按顺序列出所有已配置课程。正文有效的课程可以阅读；缺少正文的课程会显示为“计划中”，且不提供链接。课程页面提供返回课程概览的入口，以及计划中紧邻的上一课和下一课。尚未撰写的相邻课程只展示信息，不会跳过或链接。
-
-### Project Layout
+A course project contains a root `index.ts`, a `lessons/` directory, and an optional `assets/` directory:
 
 ```text
 my-course/
@@ -35,39 +28,65 @@ my-course/
     └── message-flow.png
 ```
 
-### Course Definition
+Define the course in `index.ts`:
 
 ```ts
-// index.ts
 import { defineCourse } from "teach-kit";
 
 export default defineCourse({
   title: "Hyperlane 协议学习",
   description: "理解消息交付、安全边界和应用授权。",
   lessons: [
-    {
-      id: "message-lifecycle",
-      title: "消息生命周期",
-      description: "区分消息传输和验证。",
-    },
-    {
-      id: "mailbox",
-      title: "Mailbox 与消息格式",
-      description: "理解消息分发、处理和消息标识符。",
-    },
+    { id: "message-lifecycle", title: "消息生命周期", description: "区分消息传输和验证。" },
+    { id: "mailbox", title: "Mailbox 与消息格式", description: "理解消息分发、处理和消息标识符。" },
   ],
 });
 ```
 
-`defineCourse()` validates the configuration at runtime and throws a `CourseConfigError` containing all validation issues, with paths such as `lessons[1]`. An empty `lessons` array is valid, but every index in a non-empty array must contain a valid lesson object. Sparse slots and explicit `undefined` entries are errors, not planned lessons.
+Write each lesson body in `lessons/<id>.md`:
 
-The configuration is the source of truth for lesson order, titles, and descriptions. Each lesson ID maps to `lessons/<id>.md`; paths resolve relative to the course entry rather than the current working directory.
+```md
+## 传输与验证
 
-Course configuration imports follow Bun's module cache; restart the preview process after editing `index.ts`. Symbolic links are outside the supported course layout and are not explicitly rejected by the current loader. The low-level `loadCourse()` API reports generated status when a lesson source is read. The CLI and page server additionally validate every available lesson before exposing the course.
+中继器传输消息，安全模块验证消息。
 
-A missing lesson file is shown as planned. An existing but unreadable lesson is reported as an error, not treated as missing. The shared pipeline in `src/markdown/` parses lesson sources into an AST, derives level-two sections with unique anchors and plain-text summaries, and validates links and local images. Raw HTML is reported as a located error rather than rendered. Links may use `http`, `https`, or `mailto` protocols, relative paths, or anchors; any other protocol is rejected. Images are local course assets only: remote, absolute, and escaping paths are errors, and a missing asset file is an error. The low-level loader does not parse Markdown; `check` and the page server consume the shared pipeline. The pipeline parses container directives and validates them against a fixed allowlist, and the React renderer turns callouts, details, and tabs into components on real lesson pages. Top-level Markdown files in `lessons/` that are absent from the plan produce warnings in the loaded course diagnostics; nested directories and non-Markdown files are ignored. Authors do not maintain a separate generation status or duplicate metadata in Markdown frontmatter.
+:::callout{kind="warning" title="区分这些保证"}
+成功分发并不意味着目标链执行成功。
+:::
+```
 
-### 编写课程
+Add the CLI to your scripts:
+
+```json
+{
+  "scripts": {
+    "dev": "teach-kit dev",
+    "check": "teach-kit check"
+  }
+}
+```
+
+Then start the preview and open `http://127.0.0.1:4321`:
+
+```bash
+bun run check   # validate configuration, Markdown, and resources
+bun run dev     # serve / and /lessons/<id> on 127.0.0.1:4321
+```
+
+Both commands accept an optional entry path resolved against the working directory. `PORT` sets an integer port from 0 to 65535 (0 picks a free port). Invalid configuration or lesson content exits nonzero with diagnostics; a missing lesson body is planned content, and unknown or planned lesson URLs return 404. Edit Markdown or assets and refresh; restart after editing `index.ts`, since there is no hot reload.
+
+## Wiki
+
+### Course definition
+
+- One consuming project represents one course.
+- `index.ts` is the source of truth for lesson order, titles, and descriptions.
+- Each lesson ID maps to `lessons/<id>.md`, resolved relative to the course entry, not the working directory.
+- `defineCourse()` validates at runtime and throws a `CourseConfigError` listing every issue with paths such as `lessons[1]`. An empty `lessons` array is valid; in a non-empty array every index must be a valid lesson object, so sparse slots and explicit `undefined` are errors.
+- A missing lesson file is planned content; an existing but unreadable lesson is an error.
+- Configuration imports follow Bun's module cache, so restart the preview after editing `index.ts`. Symbolic links are outside the supported layout.
+
+### Writing lessons
 
 ```md
 ## 传输与验证
@@ -87,80 +106,39 @@ A missing lesson file is shown as planned. An existing but unreadable lesson is 
 :::
 ```
 
-Supported directives:
-
 | Directive | Purpose | Constraints |
 | --- | --- | --- |
 | `callout` | Definitions, conclusions, tips, and risks | Kinds: `note`, `tip`, `warning` |
 | `details` | Answers, proofs, and supplementary explanations | Required title; collapsed by default |
 | `tabs` / `tab` | Alternative perspectives or implementations | Required tab titles; no nested tab groups |
 
-Tabs use `@radix-ui/react-tabs` for keyboard focus, automatic activation, and ARIA relationships while retaining package-owned styling. Inactive panels stay mounted and hidden, so switching tabs preserves nested disclosure state. The selected panel is keyboard-focusable. Markdown validation, rather than the UI primitive, enforces the prohibition on nested tab groups.
+Directive rules: nested directives use a longer colon fence for the outer container; unsupported directives, attributes, and structures produce located diagnostics. Raw HTML, arbitrary JSX, footnotes, and custom CSS are rejected rather than rendered. The retired `columns` / `column` directives are rejected with migration guidance — use sequential headings and paragraphs, or a Markdown table.
 
-Teaching components follow an article-annotation style. Callouts use a slim left rule, a decorative kind icon, and compact spacing; warnings also have a pale warm background. Disclosures keep the author's question or explanation title visible, with a rotating arrow and an indented answer. Their entire title row supports pointer, touch, Enter, and Space. Component bodies retain the article's typography. Tabs indicate selection with a short underline, while keyboard focus uses a compact label outline or a short panel marker. Long tab groups scroll within their own label row. Use tabs for alternative explanations or examples; keep required sequential content visible in the article.
+Sections and summaries: top-level `##` headings define lesson sections and navigation entries (headings in block quotes or teaching components are excluded). Anchors are non-empty, unique, and deterministic; empty or punctuation-only titles fall back to `section`, and `main-content` is reserved for the skip link. Preview summaries come from the first non-empty paragraph, including lists and block quotes, not from subheadings, code, or tables.
 
-The `columns` and `column` directives have been retired. Use sequential headings and paragraphs for explanations, or a Markdown table for comparisons. To migrate existing lessons, remove the outer `columns` fence and each `column` fence, preserving the enclosed headings and prose in their original order. Both `check` and the preview server reject the old syntax with file locations and migration guidance.
+### Math, code, and diagrams
 
-Nested directives use a longer colon fence for the outer container. Unsupported directives, attributes, and structures produce actionable diagnostics. Raw HTML, arbitrary JSX, and custom CSS are not authoring escape hatches. Footnote references and definitions are also rejected with located errors; move their explanations into the lesson body instead.
+- Inline `$...$` and block `$$...$$` math render with KaTeX. `check` and the server validate every expression, so invalid LaTeX produces a located error instead of an unvalidated render. Block math is excluded from summaries; inline math contributes.
+- Fenced code blocks are highlighted by language and keep their text verbatim; unknown or missing languages fall back to plain text without error.
+- `mermaid` fences render to SVG on the server (flowchart, state, sequence, class, ER, and xychart). Parse failures produce located errors, and generated SVG has `<script>`, external `href`, and Google Fonts `@import` removed, so the preview makes no third-party requests.
 
-Root-level headings (`##`) define primary lesson sections and navigation entries. Headings inside block quotes do not enter navigation; headings inside teaching components are excluded as well. Section anchors are non-empty and unique among sections, with `section` as the fallback for empty or punctuation-only titles. Anchors are deterministic for the same heading order; reordering duplicate headings can change their suffixes. Lesson pages reserve `main-content` for the skip link, so a section named "Main content" receives `main-content-1` (or the next available suffix) instead of colliding with the page target.
+### Resources and validation
 
-Preview summaries use the first non-empty paragraph, including paragraphs in lists and block quotes. Subheadings, code, tables, raw HTML, and other non-prose containers do not supply summaries. Inline formatting preserves text boundaries, and image alternative text contributes to the summary. Sections without prose have an empty summary.
+- Links may use `http`, `https`, `mailto`, relative paths, or anchors; other protocols are rejected. Images must be local course assets — remote, absolute, or escaping paths are errors, as is a missing asset file.
+- Inline and reference-style links and images share validation, follow CommonMark definition precedence, and report diagnostics at the usage. Image paths are decoded once; query strings and fragments do not affect filesystem lookup.
+- The shared `src/markdown/` pipeline parses sources into an AST, derives sections, and validates resources, math, and Mermaid. Unplanned top-level Markdown files in `lessons/` produce warnings; nested directories and non-Markdown files are ignored.
 
-On desktop, the left section rail provides native anchor links. Hover or focus a link to preview its title and summary; moving into the preview keeps it open. Escape dismisses the preview without moving focus. Long titles wrap, summaries are visually shortened, and previews remain within the viewport. Floating UI handles non-modal hover/focus interactions and collision-aware positioning; the package owns the content and styling. The current section follows heading positions as you scroll, including after disclosures change the article height. Before the first section there is no current item; at the document bottom the final section is current. Selecting a section updates the URL fragment and focuses its heading. Ordinary scrolling does not rewrite the URL or add history entries; native fragment links preserve browser Back/Forward navigation.
+### Navigation and layout
 
-视口宽度小于 1000px 时，文章前会显示“本页内容”按钮，展开章节目录。使用触摸、指针或 Enter 选择链接后，目录会收起并将焦点移到对应标题。按 Escape 可收起目录并将焦点还给按钮；也可以正常按 Tab 离开目录。长目录可在目录区域或桌面章节栏内滚动。没有顶层章节的课程不会显示导航控件。切换布局或课程会重置预览和目录状态；跳转章节时不强制平滑滚动。
+- Desktop: a left section rail provides native anchor links with hover/focus previews of title and summary. Escape dismisses a preview without moving focus, and previews stay within the viewport. The current section tracks heading positions while scrolling; selecting a section updates the URL fragment and focuses its heading.
+- Narrow viewports (under 1000px): a "本页内容" button above the article expands the outline; choosing a link collapses it and moves focus to the heading. Escape returns focus to the button, and long outlines scroll within their region.
+- Ordinary scrolling does not rewrite the URL or add history entries; fragment links preserve Back/Forward navigation. Courses without top-level sections show no navigation controls.
 
-Inline and reference-style links and images share resource validation. References follow CommonMark definition precedence, and diagnostics identify the usage rather than the definition. Unused definitions are not checked as resources. Image URL paths are decoded once before containment checks; query strings and fragments do not affect filesystem lookup. Invalid encodings and decoded absolute, escaping, or null-containing paths are errors. Paths resolve relative to the course entry directory, not the lesson file. Symbolic-link layouts remain unsupported.
+### Teaching components
 
-The internal Markdown modules separate parsing, section metadata, resource validation, math validation, Mermaid rendering, and source diagnostics. They reuse `unist-util-visit` for traversal, `mdast-util-definitions` for reference resolution, `mdast-util-to-string` for text extraction, and `github-slugger` for anchors. Standard Markdown rendering reuses `mdast-util-to-hast` and `hast-util-to-jsx-runtime`, consuming the existing mdast tree without parsing the source again. A small adapter maps teaching directives to React components; raw HTML, footnotes, and unsupported nodes remain disabled. Code text is preserved without adding a trailing newline. Teach Kit owns the authoring policies and filesystem checks; links are validated with the platform URL parser and reported as errors rather than silently sanitized.
+Callouts use a slim left rule, a kind icon, and compact spacing, with a pale warm background for warnings. Disclosures keep the author's title visible with a rotating arrow and an indented answer, and the entire title row supports pointer, touch, Enter, and Space. Tabs use `@radix-ui/react-tabs` for keyboard focus and ARIA, keep inactive panels mounted, and scroll long label rows. The package owns all styling and content.
 
-### 公式、代码与图表
-
-行内公式使用 `$...$`，块级公式使用 `$$...$$`，两者都由 KaTeX 渲染。`check` 与预览服务器在加载内容时用 KaTeX 校验每个表达式，非法 LaTeX 会产生带文件位置的 error 诊断，因此页面不会渲染未校验的公式。块级公式不进入章节摘要；行内公式作为正文文本参与摘要。
-
-围栏代码块按语言进行语法高亮，配色沿用当前阅读主题。未知或缺失的语言保持纯文本且不报错，代码文本按原样保留，不追加尾随换行。指令容器内的代码同样会被高亮。
-
-`mermaid` 围栏在加载内容时由服务端渲染为 SVG，覆盖 beautiful-mermaid 支持的流程图、状态图、时序图、类图、ER 图和 xychart。图表类型头部缺失或语法解析失败会产生带文件位置的 error 诊断。生成的 SVG 在嵌入前会移除 `<script>`、外部 `href` 和 Google Fonts `@import`；浏览器只接收最终 SVG，不包含布局引擎或 WASM，预览也不会发起第三方网络请求。图表颜色通过主题变量跟随阅读主题。
-
-### 安装与命令
-
-Build and pack this repository, then install the resulting artifact in an independent course project:
-
-```bash
-# In the Teach Kit repository
-bun install
-bun run build
-bun pm pack --filename teach-kit.tgz
-
-# In the course project
-bun add /absolute/path/to/teach-kit/teach-kit.tgz
-```
-
-A published package may later support `bun add teach-kit`, subject to package name availability. Consumers do not need React or Tailwind configuration; the frontend is already built.
-
-Use these project scripts:
-
-```json
-{
-  "scripts": {
-    "dev": "teach-kit dev",
-    "check": "teach-kit check"
-  }
-}
-```
-
-`teach-kit dev` loads the root `index.ts` and serves `/` and `/lessons/<id>` on loopback port 4321. `teach-kit check` validates configuration, Markdown, and resources without launching a browser. Both commands accept an optional entry path, resolved against the working directory:
-
-```bash
-bun run check
-bun run dev
-PORT=4325 bun run dev /absolute/path/to/course/index.ts
-```
-
-Invalid configuration or lesson content produces a nonzero exit code with actionable diagnostics. Missing lesson bodies are valid planned content. Unknown and planned lesson URLs return HTTP 404. `PORT` must be an integer between 0 and 65535; 0 requests an available port. SIGINT and SIGTERM shut down the preview cleanly. Edit Markdown or assets and refresh to see changes; restart after configuration changes. No hot-reload system is provided.
-
-## 仓库结构
+### Repository structure
 
 ```text
 src/
@@ -178,26 +156,16 @@ tests/
 └── helpers/               # Temporary projects and server lifecycle
 
 example/                   # A course with three available and two planned lessons
-├── index.ts
-├── lessons/               # Prose, teaching components, math, code, and Mermaid
-└── assets/                # Local SVG illustration
 ```
 
-All test files live under `tests/`: unit tests in `tests/unit/`, integration tests in `tests/integration/`, and browser tests in `tests/e2e/`. Source and tooling directories do not contain test files.
+All test files live under `tests/`. `src/index.ts` is the public entry and does not start a server; the consumer CLI is in `src/server/cli.ts`, and the repository preview runs through `src/server/dev.ts` using `example/index.ts` by default. Course content is read at runtime while the frontend is built in advance.
 
-`src/index.ts` is the public package entry and does not start a server. The repository preview runs through `src/server/dev.ts` using `example/index.ts` by default; the consumer CLI lives in `src/server/cli.ts`. Browser code lives in `src/web/`.
-
-Course content is read at runtime, while the package frontend is built in advance. Package installation tests use an actual packed artifact in an independent project, including CLI validation and desktop/narrow-screen browser navigation.
-
-## 教学工作流
-
-The intended teaching workflow is:
+### Teaching workflow
 
 1. Plan or revise the course in `index.ts`.
-2. Create or update a lesson Markdown file and any necessary assets.
-3. Run content validation.
-4. Open the local preview with Playwright.
-5. Check navigation, component interactions, browser errors, and desktop/narrow-screen layouts.
-6. Inspect screenshots and revise the content as needed.
+2. Create or update a lesson Markdown file and any assets.
+3. Run `bun run check`.
+4. Open the local preview and verify navigation, component interactions, browser errors, and desktop and narrow-screen layouts.
+5. Inspect screenshots and revise the content as needed.
 
-Routine lesson generation should not require changes to the library rendering code. Browser checks validate presentation and interactions; they do not establish the factual correctness of teaching content.
+Routine lesson changes should not require editing the library rendering code. Browser checks validate presentation and interactions, not the factual correctness of teaching content.
