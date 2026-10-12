@@ -109,8 +109,12 @@ function SectionLink({
       <a
         ref={refs.setReference}
         href={`#${section.id}`}
+        data-heading-level={section.depth}
         aria-current={active ? "location" : undefined}
-        className="group/tick flex min-h-[13px] w-11 items-center justify-start rounded-[3px] pl-4"
+        className={cn(
+          "group/tick flex min-h-[13px] w-11 items-center justify-start rounded-[3px]",
+          section.depth === 3 ? "pl-5" : "pl-4",
+        )}
         {...getReferenceProps({
           onPointerEnter: () => setHoveredIndex(index),
           onFocus: () => setFocusedIndex(index),
@@ -122,7 +126,9 @@ function SectionLink({
           aria-hidden="true"
           className={cn(
             "section-tick block h-0.5 transition-[width,opacity] duration-[120ms]",
-            tickWaveClass(waveDistance),
+            section.depth === 3 && waveDistance === null
+              ? "w-1 opacity-45"
+              : tickWaveClass(waveDistance),
             active
               ? "bg-primary opacity-100"
               : waveDistance === 0
@@ -241,8 +247,9 @@ export function SectionNavigation({ sections }: { sections: readonly MarkdownSec
               <li key={section.id}>
                 <a
                   href={`#${section.id}`}
+                  data-heading-level={section.depth}
                   aria-current={activeId === section.id ? "location" : undefined}
-                  className={OUTLINE_LINK}
+                  className={cn(OUTLINE_LINK, section.depth === 3 ? "pl-6" : "font-semibold")}
                   onClick={(event) => {
                     focusHeading(event, section.id);
                     setExpanded(false);

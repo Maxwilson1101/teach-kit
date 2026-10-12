@@ -7,9 +7,53 @@ const titles = [
   "跟随一条消息",
   "两个不同的问题",
   "真实性不等于授权",
+  "协议接受",
+  "应用授权",
   "检查理解",
   "延伸阅读",
 ] as const;
+
+test("distinguishes subsection levels and navigates them by keyboard at both layouts", async ({
+  page,
+}, testInfo) => {
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 740 });
+    await page.unroute("**/api/lessons/message-lifecycle");
+    await openNavigationLesson(
+      page,
+      "# Title\n\n## Parent\n\nParent text.\n\n### Child\n\nChild text.\n\n## Next\n\nNext text." +
+        "\n\nLong ending paragraph.".repeat(40),
+    );
+    const nav = page.getByRole("navigation", { name: "章节导航", exact: true });
+    if (width === 320) await nav.getByRole("button").click();
+    const parent = nav.getByRole("link", { name: "Parent", exact: true });
+    const child = nav.getByRole("link", { name: "Child", exact: true });
+    await expect(nav.getByRole("link")).toHaveCount(3);
+    await expect(parent).toHaveAttribute("data-heading-level", "2");
+    await expect(child).toHaveAttribute("data-heading-level", "3");
+    if (width === 1280) {
+      const parentTick = await parent.locator(".section-tick").boundingBox();
+      const childTick = await child.locator(".section-tick").boundingBox();
+      expect(childTick?.width).toBeLessThan(parentTick?.width ?? 0);
+      expect(childTick?.x).toBeGreaterThan(parentTick?.x ?? 0);
+      await child.focus();
+      await expect(page.getByRole("tooltip")).toContainText("Child text.");
+    } else {
+      const padding = (element: Element) =>
+        Number.parseFloat(getComputedStyle(element).paddingLeft);
+      expect(await child.evaluate(padding)).toBeGreaterThan(await parent.evaluate(padding));
+    }
+    await page.screenshot({ path: testInfo.outputPath(`hierarchy-${width}.png`) });
+    await child.focus();
+    await child.press("Enter");
+    await expect(page.locator("h3#child")).toBeFocused();
+    await expect(page).toHaveURL(/#child$/);
+    await expect(nav.locator('a[href="#child"]')).toHaveAttribute("aria-current", "location");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+});
 
 test("animates nearby tick lengths around the hovered or focused section", async ({
   page,
@@ -28,7 +72,7 @@ test("animates nearby tick lengths around the hovered or focused section", async
   );
   expect(bounds).toHaveLength(titles.length);
   for (const [index, tick] of bounds.entries()) {
-    expect(tick.width).toBe(8);
+    expect(tick.width).toBe(index === 4 || index === 5 ? 4 : 8);
     expect(tick.height).toBe(2);
     if (index > 0) expect(tick.y - (bounds[index - 1]?.y ?? 0)).toBe(13);
   }
@@ -43,10 +87,10 @@ test("animates nearby tick lengths around the hovered or focused section", async
   await page.screenshot({ path: testInfo.outputPath("compact-section-hover.png") });
   await page.keyboard.press("Escape");
   await page.mouse.move(900, 100);
-  await links.nth(4).focus();
+  await links.nth(6).focus();
   await expect(page.getByRole("tooltip")).toBeVisible();
-  await expect.poll(async () => (await ticks.nth(4).boundingBox())?.width).toBeGreaterThan(24);
-  await expect.poll(async () => (await ticks.nth(3).boundingBox())?.width).toBeGreaterThan(18);
+  await expect.poll(async () => (await ticks.nth(6).boundingBox())?.width).toBeGreaterThan(24);
+  await expect.poll(async () => (await ticks.nth(5).boundingBox())?.width).toBeGreaterThan(18);
   expect(await navigation.boundingBox()).toEqual(railBounds);
   await page.keyboard.press("Enter");
   await expect(page.locator("#检查理解")).toBeFocused();
@@ -192,7 +236,7 @@ test("tracks scrolling, introduction and a short last section without writing UR
   await page.locator("#跟随一条消息").evaluate((heading) => heading.scrollIntoView());
   await expect(current).toHaveAccessibleName(titles[1] ?? "");
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect(current).toHaveAccessibleName(titles[5] ?? "");
+  await expect(current).toHaveAccessibleName(titles[7] ?? "");
   await expect(page).toHaveURL(/\/lessons\/message-lifecycle$/);
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   await page.evaluate(() => window.scrollTo(0, 0));

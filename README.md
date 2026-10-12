@@ -114,7 +114,9 @@ Both commands accept an optional entry path resolved against the working directo
 
 Directive rules: nested directives use a longer colon fence for the outer container; unsupported directives, attributes, and structures produce located diagnostics. Raw HTML, arbitrary JSX, footnotes, and custom CSS are rejected rather than rendered. The retired `columns` / `column` directives are rejected with migration guidance — use sequential headings and paragraphs, or a Markdown table.
 
-Sections and summaries: top-level `##` headings define lesson sections and navigation entries (headings in block quotes or teaching components are excluded). Anchors are non-empty, unique, and deterministic; empty or punctuation-only titles fall back to `section`, and `main-content` is reserved for the skip link. Preview summaries come from the first non-empty paragraph, including lists and block quotes, not from subheadings, code, or tables.
+Heading levels: use `#` for a title, `##` for a section, and `###` for a subsection. Top-level `##` and `###` headings both define navigation entries; `#` titles, deeper headings, and headings in block quotes or teaching components are excluded from navigation. A subsection without a preceding section still appears at its own level.
+
+Sections and summaries: anchors are non-empty, unique across both navigation levels, and deterministic; empty or punctuation-only titles fall back to `section`, and `main-content` is reserved for the skip link. Each entry extends to the next top-level `##` or `###` heading. Preview summaries come from its first non-empty paragraph, including lists and block quotes, not from code, tables, or a following subsection.
 
 ### Math, code, and diagrams
 
@@ -130,8 +132,8 @@ Sections and summaries: top-level `##` headings define lesson sections and navig
 
 ### Navigation and layout
 
-- Desktop: a left section rail provides native anchor links with hover/focus previews of title and summary. Escape dismisses a preview without moving focus, and previews stay within the viewport. The current section tracks heading positions while scrolling; selecting a section updates the URL fragment and focuses its heading.
-- Narrow viewports (under 1000px): a "本页内容" button above the article expands the outline; choosing a link collapses it and moves focus to the heading. Escape returns focus to the button, and long outlines scroll within their region.
+- Desktop: a left section rail provides native anchor links with hover/focus previews of title and summary. Subsections use shorter, inset ticks at rest. Escape dismisses a preview without moving focus, and previews stay within the viewport. The current section or subsection tracks heading positions while scrolling; selecting an entry updates the URL fragment and focuses its heading.
+- Narrow viewports (under 1000px): a "本页内容" button above the article expands the outline, with semibold sections and indented subsections; choosing a link collapses it and moves focus to the heading. Escape returns focus to the button, and long outlines scroll within their region.
 - Ordinary scrolling does not rewrite the URL or add history entries; fragment links preserve Back/Forward navigation. Courses without top-level sections show no navigation controls.
 
 ### Teaching components

@@ -7,6 +7,16 @@ function sections(source: string) {
 }
 
 describe("extractSections", () => {
+  test("excludes titles, deep and nested headings while keeping mixed-level anchors unique", () => {
+    expect(
+      sections(
+        "# Title\n\n### Same\n\nChild.\n\n#### Detail\n\nMore.\n\n> ### Quoted\n\n## Same\n\nParent.",
+      ),
+    ).toEqual([
+      { id: "same", depth: 3, title: "Same", summary: "Child." },
+      { id: "same-1", depth: 2, title: "Same", summary: "Parent." },
+    ]);
+  });
   test("uses level-two headings as ordered sections", () => {
     const source = [
       "# Lesson title",
@@ -22,21 +32,24 @@ describe("extractSections", () => {
     ].join("\n");
 
     expect(sections(source)).toEqual([
-      { id: "first", title: "First", summary: "One." },
-      { id: "second", title: "Second", summary: "Two." },
+      { id: "first", depth: 2, title: "First", summary: "One." },
+      { id: "second", depth: 2, title: "Second", summary: "Two." },
     ]);
   });
 
-  test("keeps deeper headings inside the enclosing section and not as boundaries", () => {
+  test("includes level-three subheadings as distinct sections", () => {
     const source = ["## Outer", "", "Intro.", "", "### Nested", "", "Detail."].join("\n");
 
-    expect(sections(source)).toEqual([{ id: "outer", title: "Outer", summary: "Intro." }]);
+    expect(sections(source)).toEqual([
+      { id: "outer", depth: 2, title: "Outer", summary: "Intro." },
+      { id: "nested", depth: 3, title: "Nested", summary: "Detail." },
+    ]);
   });
 
   test("does not treat headings inside block quotes as sections", () => {
     const source = ["> ## Quoted", "", "## Real", "", "Body."].join("\n");
 
-    expect(sections(source)).toEqual([{ id: "real", title: "Real", summary: "Body." }]);
+    expect(sections(source)).toEqual([{ id: "real", depth: 2, title: "Real", summary: "Body." }]);
   });
 
   test("generates unique anchors for duplicate titles", () => {
@@ -69,14 +82,16 @@ describe("extractSections", () => {
     ].join("\n");
 
     expect(sections(source)).toEqual([
-      { id: "mixed", title: "Mixed", summary: "Real summary text." },
+      { id: "mixed", depth: 2, title: "Mixed", summary: "Real summary text." },
     ]);
   });
 
   test("returns an empty summary when a section has no prose", () => {
     const source = ["## Code only", "", "```js", "value()", "```"].join("\n");
 
-    expect(sections(source)).toEqual([{ id: "code-only", title: "Code only", summary: "" }]);
+    expect(sections(source)).toEqual([
+      { id: "code-only", depth: 2, title: "Code only", summary: "" },
+    ]);
   });
 
   test("keeps fallback anchors unique alongside actual section titles", () => {
@@ -108,8 +123,8 @@ describe("extractSections", () => {
     expect(document.tree).toEqual(original);
   });
 
-  test("skips subheadings and finds the first paragraph in prose containers", () => {
-    expect(sections("## Summary\n\n### Subheading\n\nActual prose.")[0]?.summary).toBe(
+  test("keeps parent summaries separate from subheadings and reads prose containers", () => {
+    expect(sections("## Summary\n\n### Subheading\n\nActual prose.")[1]?.summary).toBe(
       "Actual prose.",
     );
     expect(sections("## Summary\n\n> ### Quoted heading\n>\n> Quoted prose.")[0]?.summary).toBe(

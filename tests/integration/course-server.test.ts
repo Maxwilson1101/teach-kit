@@ -55,8 +55,8 @@ test("serves ordered metadata, validated lesson ASTs, and entry-relative assets"
       .map((node: { data: { hProperties: { id: string } } }) => node.data.hProperties.id),
   ).toEqual(["model", "model-1"]);
   expect(lesson.sections).toEqual([
-    { id: "model", title: "Model", summary: "Local diagram" },
-    { id: "model-1", title: "Model", summary: "Conclusion." },
+    { id: "model", depth: 2, title: "Model", summary: "Local diagram" },
+    { id: "model-1", depth: 2, title: "Model", summary: "Conclusion." },
   ]);
   expect(JSON.stringify(lesson.tree)).toContain("/assets/model.svg");
   for (const path of ["/", "/lessons/first", "/lessons/last"]) {
@@ -102,6 +102,10 @@ test("shares root heading IDs and prose summaries while excluding nested heading
       "",
       "Real **summary**.",
       "",
+      "### Overview",
+      "",
+      "Child summary.",
+      "",
       "## Overview",
       "",
       "##",
@@ -112,14 +116,16 @@ test("shares root heading IDs and prose summaries while excluding nested heading
   servers.push(server);
   const lesson = await (await fetch(new URL("/api/lessons/first", server.url))).json();
   expect(lesson.sections).toEqual([
-    { id: "overview", title: "Overview", summary: "Real summary." },
-    { id: "overview-1", title: "Overview", summary: "" },
-    { id: "section", title: "", summary: "" },
+    { id: "overview", depth: 2, title: "Overview", summary: "Real summary." },
+    { id: "overview-1", depth: 3, title: "Overview", summary: "Child summary." },
+    { id: "overview-2", depth: 2, title: "Overview", summary: "" },
+    { id: "section", depth: 2, title: "", summary: "" },
   ]);
   expect(
     lesson.tree.children
       .filter(
-        (node: { type: string; depth?: number }) => node.type === "heading" && node.depth === 2,
+        (node: { type: string; depth?: number }) =>
+          node.type === "heading" && (node.depth === 2 || node.depth === 3),
       )
       .map((node: { data: { hProperties: { id: string } } }) => node.data.hProperties.id),
   ).toEqual(lesson.sections.map((section: { id: string }) => section.id));
@@ -134,7 +140,7 @@ test("does not assign the skip-link target ID to a lesson heading", async () => 
   servers.push(server);
   const lesson = await (await fetch(new URL("/api/lessons/first", server.url))).json();
   expect(lesson.sections).toEqual([
-    { id: "main-content-1", title: "Main content", summary: "Body." },
+    { id: "main-content-1", depth: 2, title: "Main content", summary: "Body." },
   ]);
   expect(lesson.tree.children[0].data.hProperties.id).toBe("main-content-1");
 });

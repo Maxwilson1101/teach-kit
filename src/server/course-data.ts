@@ -42,7 +42,7 @@ export async function readCoursePages(entry: string) {
     const sections = extractSections(document.tree, [MAIN_CONTENT_ID]);
     let sectionIndex = 0;
     for (const node of document.tree.children) {
-      if (node.type === "heading" && node.depth === 2) {
+      if (node.type === "heading" && (node.depth === 2 || node.depth === 3)) {
         node.data = { ...node.data, hProperties: { id: sections[sectionIndex++]?.id } };
       }
     }

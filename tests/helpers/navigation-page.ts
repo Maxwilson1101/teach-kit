@@ -9,7 +9,7 @@ export async function openNavigationLesson(page: Page, source: string, fragment 
   const sections = extractSections(tree, [MAIN_CONTENT_ID]);
   let index = 0;
   for (const node of tree.children) {
-    if (node.type === "heading" && node.depth === 2) {
+    if (node.type === "heading" && (node.depth === 2 || node.depth === 3)) {
       node.data = { hProperties: { id: sections[index++]?.id } };
     }
   }

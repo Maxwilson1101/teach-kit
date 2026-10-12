@@ -1,5 +1,5 @@
 /**
- * Section metadata derived from level-two headings.
+ * Section metadata derived from level-two and level-three headings.
  *
  * Only direct children of the document root act as section boundaries, so
  * headings nested inside block quotes, lists, or directive containers never
@@ -16,6 +16,8 @@ import { EXIT, SKIP, visit } from "unist-util-visit";
 export interface MarkdownSection {
   /** Non-empty heading slug, unique among the lesson's section anchors. */
   id: string;
+  /** Heading level; level-one titles do not appear in section navigation. */
+  depth: 2 | 3;
   title: string;
   /** First non-empty paragraph in ordinary prose, including image alt text; empty when absent. */
   summary: string;
@@ -55,9 +57,9 @@ function summarize(nodes: readonly RootContent[]): string {
 }
 
 /**
- * Extracts sections from top-level level-two headings in document order.
+ * Extracts sections from top-level level-two and level-three headings in document order.
  * Content before the first section is ignored. Each section extends to the
- * next top-level level-two heading; deeper headings do not split sections.
+ * next top-level level-two or level-three heading; deeper headings do not split sections.
  * Empty or unsluggable titles use `section` as the anchor base, and duplicate
  * anchors receive unique suffixes. Summaries follow the prose rules above.
  * Reserved page IDs are skipped using the same uniqueness suffix rules.
@@ -70,21 +72,26 @@ export function extractSections(
   const slugger = new GithubSlugger();
   const reserved = new Set(reservedIds);
   const sections: MarkdownSection[] = [];
-  let current: { id: string; title: string; nodes: RootContent[] } | undefined;
+  let current: { id: string; depth: 2 | 3; title: string; nodes: RootContent[] } | undefined;
 
   const flush = () => {
     if (!current) return;
-    sections.push({ id: current.id, title: current.title, summary: summarize(current.nodes) });
+    sections.push({
+      id: current.id,
+      depth: current.depth,
+      title: current.title,
+      summary: summarize(current.nodes),
+    });
   };
 
   for (const node of tree.children) {
-    if (node.type === "heading" && node.depth === 2) {
+    if (node.type === "heading" && (node.depth === 2 || node.depth === 3)) {
       flush();
       const title = mdastToString(node).trim();
       const base = slug(title) ? title : "section";
       let id = slugger.slug(base);
       while (reserved.has(id)) id = slugger.slug(base);
-      current = { id, title, nodes: [] };
+      current = { id, depth: node.depth, title, nodes: [] };
       continue;
     }
     if (current) current.nodes.push(node);
