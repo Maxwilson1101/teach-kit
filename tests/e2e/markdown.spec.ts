@@ -78,7 +78,7 @@ test("highlights fenced code with the lesson token colors", async ({ page }, tes
 
   const keyword = page.locator(".lesson-prose .hljs-keyword").first();
   await expect(keyword).toHaveText("const");
-  await expect(keyword).toHaveCSS("color", "rgb(24, 115, 60)");
+  await expect(keyword).toHaveCSS("color", "rgb(40, 91, 133)");
   await page.screenshot({ path: testInfo.outputPath("code.png"), fullPage: true });
 });
 

@@ -36,7 +36,7 @@ for (const colorScheme of ["light", "dark"] as const) {
   });
 }
 
-test("presents a continuous serif article in a centered reading column", async ({ page }) => {
+test("presents a compact sans article in a centered reading column", async ({ page }) => {
   await page.goto("/lessons/message-lifecycle");
   const article = page.getByRole("article");
   await expect(article).toBeVisible();
@@ -49,9 +49,10 @@ test("presents a continuous serif article in a centered reading column", async (
       lineHeight: Number.parseFloat(style.lineHeight),
     };
   });
-  expect(typography.family).toContain("Georgia");
-  expect(typography.size).toBeGreaterThanOrEqual(16);
-  expect(typography.size).toBeLessThanOrEqual(18);
+  expect(typography.family).toContain("Segoe UI Variable");
+  expect(typography.family).toContain("Microsoft YaHei");
+  expect(typography.family).not.toContain("SimSun");
+  expect(typography.size).toBe(16);
   expect(typography.lineHeight / typography.size).toBeLessThanOrEqual(1.7);
   const borderedWrappers = await paragraph.evaluate((element) => {
     let count = 0;
@@ -77,7 +78,17 @@ test("presents a continuous serif article in a centered reading column", async (
 test("keeps lesson and course titles compact", async ({ page }) => {
   const fontSize = (element: Element) => Number.parseFloat(getComputedStyle(element).fontSize);
   await page.goto("/lessons/message-lifecycle");
-  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(36);
+  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(30);
   await page.goto("/");
-  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(48);
+  expect(await page.getByRole("heading", { level: 1 }).evaluate(fontSize)).toBeLessThanOrEqual(36);
+});
+
+test("inherits a visible scrollbar theme in new overflow regions", async ({ page }) => {
+  await page.goto("/lessons/rendering");
+  const colors = await page
+    .locator("html")
+    .evaluate((element) => getComputedStyle(element).scrollbarColor);
+  expect(colors).not.toBe("auto");
+  await page.emulateMedia({ forcedColors: "active" });
+  await expect(page.locator("html")).toHaveCSS("scrollbar-color", "auto");
 });

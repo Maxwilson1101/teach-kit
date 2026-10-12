@@ -13,7 +13,7 @@ export interface DetailsProps {
 export function Details({ title, children }: DetailsProps) {
   return (
     <details className="disclosure group my-4" data-details>
-      <summary className="flex min-h-11 cursor-pointer list-none items-start gap-2 py-2.5 font-serif font-semibold [font-size:inherit] leading-[inherit] hover:text-primary [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-start gap-2 py-2.5 font-sans font-semibold [font-size:inherit] leading-[inherit] hover:text-primary [&::-webkit-details-marker]:hidden">
         <svg
           aria-hidden="true"
           focusable="false"

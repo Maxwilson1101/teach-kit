@@ -124,7 +124,7 @@ test("ties each callout title to its kind theme color with AA contrast and a 16p
   }
 });
 
-test("matches the disclosure question to the serif article typography", async ({ page }) => {
+test("matches the disclosure question to the sans article typography", async ({ page }) => {
   await page.goto("/lessons/message-lifecycle");
   const article = page.getByRole("article");
   const summary = article.locator("details > summary").first();

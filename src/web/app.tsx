@@ -59,7 +59,7 @@ export function CourseView({
         跳转到正文
       </a>
       <header className="site-header">
-        <div className="mx-auto flex min-h-18 max-w-6xl items-center justify-between gap-4 px-6 sm:px-10">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-6 sm:px-10">
           <a href="/" className="site-wordmark">
             Teach Kit
             <span aria-hidden="true" className="text-primary">
@@ -81,7 +81,7 @@ export function CourseView({
         className={`reading-column ${lesson ? "" : "course-index"} outline-none`}
       >
         <div className="reading-heading">
-          <p className="mb-5 text-sm text-muted-foreground">
+          <p className="mb-4 text-xs text-muted-foreground">
             {lesson
               ? `${course.title} · 第 ${String(lessonIndex + 1).padStart(2, "0")} 课`
               : "一课一课地学习"}
@@ -89,10 +89,10 @@ export function CourseView({
           <h1 className={lesson ? "lesson-title" : "course-title"}>
             {lesson?.title ?? course.title}
           </h1>
-          <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
             {lesson?.description ?? course.description}
           </p>
-          <div className="mt-7 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+          <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
             {lesson ? (
               <>
                 <span>
@@ -141,7 +141,7 @@ export function CourseView({
             )}
             <ol>
               {course.lessons.map((item, index) => (
-                <li key={item.id} className="flex gap-5 border-b py-5 sm:gap-8 sm:py-7">
+                <li key={item.id} className="flex gap-5 border-b py-5 sm:gap-8 sm:py-6">
                   <span aria-hidden="true" className="lesson-number">
                     {String(index + 1).padStart(2, "0")}
                   </span>
@@ -155,7 +155,7 @@ export function CourseView({
                         {item.status === "generated" ? "已完成" : "计划中"}
                       </Badge>
                     </div>
-                    <h3 className="text-lg font-bold leading-snug tracking-tight sm:text-xl">
+                    <h3 className="text-base font-semibold leading-snug tracking-tight sm:text-lg">
                       {item.status === "generated" ? (
                         <a className="course-link hover:text-primary" href={`/lessons/${item.id}`}>
                           {item.title}
